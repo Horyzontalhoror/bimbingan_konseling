@@ -5,7 +5,7 @@
     <style>
         body {
             font-family: sans-serif;
-            font-size: 12px;
+            font-size: 11px;
         }
         table {
             width: 100%;
@@ -14,7 +14,7 @@
         }
         th, td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 4px;
             text-align: center;
         }
         th {
@@ -31,7 +31,7 @@
     </style>
 </head>
 <body>
-    <h2>Data Rekomendasi Siswa</h2>
+    <h2>Data Lengkap Nilai Siswa</h2>
     <p>Bimbingan Konseling SMP</p>
 
     <table>
@@ -40,6 +40,17 @@
                 <th>Nama</th>
                 <th>Kelas</th>
                 <th>NISN</th>
+                <th>B. Indo</th>
+                <th>B. Inggris</th>
+                <th>Mat</th>
+                <th>IPA</th>
+                <th>IPS</th>
+                <th>Agama</th>
+                <th>PPKn</th>
+                <th>Sosbud</th>
+                <th>TIK</th>
+                <th>Penjas</th>
+                <th>Jumlah</th>
                 <th>Rata-rata</th>
                 <th>Kategori</th>
             </tr>
@@ -50,6 +61,17 @@
                     <td>{{ $row->name }}</td>
                     <td>{{ $row->class }}</td>
                     <td>{{ $row->nisn }}</td>
+                    <td>{{ $row->bindo }}</td>
+                    <td>{{ $row->bing }}</td>
+                    <td>{{ $row->mat }}</td>
+                    <td>{{ $row->ipa }}</td>
+                    <td>{{ $row->ips }}</td>
+                    <td>{{ $row->agama }}</td>
+                    <td>{{ $row->ppkn }}</td>
+                    <td>{{ $row->sosbud }}</td>
+                    <td>{{ $row->tik }}</td>
+                    <td>{{ $row->penjas }}</td>
+                    <td>{{ $row->jumlah_nilai }}</td>
                     <td>{{ $row->rata_rata }}</td>
                     <td>{{ $row->kategori }}</td>
                 </tr>

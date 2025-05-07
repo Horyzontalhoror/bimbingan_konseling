@@ -1,7 +1,7 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\Auth\guru_bk;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -41,6 +41,6 @@ class DashboardController extends Controller
 
 
         // return view('dashboard', compact('siswa', 'statistik'));
-        return view('dashboard', compact('siswa', 'statistik', 'semuaKelas'));
+        return view('guru_bk.dashboard.dashboard', compact('siswa', 'statistik', 'semuaKelas'));
     }
 }

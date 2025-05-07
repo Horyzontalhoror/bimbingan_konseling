@@ -17,6 +17,13 @@
     </li>
 
     <li class="nav-item">
+        <a class="nav-link" href="{{ route('nilai.index') }}">
+            <i class="fas fa-table"></i>
+            <span>Data Nilai</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
         <a class="nav-link" href="{{ route('students.index') }}">
             <i class="fas fa-fw fa-users"></i>
             <span>Data Siswa</span>
@@ -38,17 +45,10 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="{{ route('call-letter.form') }}">
+        <a class="nav-link" href="{{ route('call-letter.index') }}">
             <i class="fas fa-fw fa-envelope"></i>
-            <span>Laporan</span>
+            <span>Panggilan</span>
         </a>
     </li>
-
-    {{-- <li class="nav-item {{ request()->is('nilai') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('nilai.index') }}">
-            <i class="fas fa-fw fa-table"></i>
-            <span>Nilai Siswa</span>
-        </a>
-    </li> --}}
 
 </ul>

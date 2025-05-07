@@ -2,88 +2,85 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\CallLetterController;
-use App\Http\Controllers\ViolationController;
-use App\Http\Controllers\CounselingScheduleController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\KMeansController;
+
+use App\Http\Controllers\Auth\guru_bk\StudentController;
+use App\Http\Controllers\Auth\guru_bk\CounselingScheduleController;
+use App\Http\Controllers\Auth\guru_bk\KMeansController;
+use App\Http\Controllers\Auth\guru_bk\KNNController;
+use App\Http\Controllers\Auth\guru_bk\DashboardController;
+use App\Http\Controllers\Auth\guru_bk\CallLetterController;
+use App\Http\Controllers\Auth\guru_bk\ViolationController;
+use App\Http\Controllers\Auth\guru_bk\NilaiController;
+
+
 use App\Exports\NilaiExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\KNNController;
 
-
+// Halaman awal
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Dashboard default Laravel Breeze
+Route::view('dashboard', 'dashboard')->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
+// Profil user
+Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
 
-
-// login
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-});
-
-//logout
+// Logout
 Route::post('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
 
-//students
+
+// Route yang membutuhkan login
 Route::middleware(['auth'])->group(function () {
+    // Dashboard khusus guru BK
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Data siswa
     Route::resource('students', StudentController::class);
-});
 
-//counseling schedule
-Route::middleware(['auth'])->group(function () {
+    // Jadwal konseling
     Route::resource('schedules', CounselingScheduleController::class);
-});
 
-//validation pelanggaran
-Route::middleware(['auth'])->group(function () {
+    // Data pelanggaran
     Route::resource('violations', ViolationController::class);
-});
 
-//call letter
-Route::middleware(['auth'])->group(function () {
-    Route::get('/call-letter', [CallLetterController::class, 'form'])->name('call-letter.form');
+    // Surat panggilan
+    Route::get('/call-letter', [CallLetterController::class, 'index'])->name('call-letter.index');
+    Route::get('/call-letter/create', [CallLetterController::class, 'form'])->name('call-letter.form');
     Route::post('/call-letter', [CallLetterController::class, 'generate'])->name('call-letter.generate');
+    Route::get('/call-letter/print/{student_id}', [CallLetterController::class, 'print'])->name('call-letter.print');
+
+    // Clustering KMeans
+    Route::get('/cluster', [KMeansController::class, 'cluster'])->name('cluster');
+
+    // Prediksi KNN
+    Route::get('/predict', [KNNController::class, 'predict'])->name('predict');
+
+    // Data nilai
+    Route::resource('nilai', NilaiController::class)->only(['index']);
+    Route::resource('nilai', NilaiController::class);
 });
 
-//dashboard
-Route::middleware(['auth'])->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-//kmeans
-Route::get('/cluster', [KMeansController::class, 'cluster'])->name('cluster');
-
-
-//profile photo
+// Gambar profil (disimpan di folder privat)
 Route::get('/profile/photo/{path}', function ($path) {
     $filePath = 'private/profile-photos/' . $path;
-
     if (!Storage::exists($filePath)) {
         abort(404);
     }
-
     return response()->file(storage_path('app/' . $filePath));
 })->name('profile.photo');
 
-//export nilai excel
+// Export data nilai ke Excel
 Route::get('/export-nilai', function () {
-    return Excel::download(new \App\Exports\NilaiExport, 'data-nilai.xlsx');
+    return Excel::download(new NilaiExport, 'data-nilai.xlsx');
 })->name('nilai.export');
 
-
-//ceatak pdf
+// Cetak PDF data nilai
 Route::get('/print-nilai', function () {
     $siswa = DB::table('nilai')
         ->when(request('kategori'), fn($q) => $q->where('kategori', request('kategori')))
@@ -103,10 +100,5 @@ Route::get('/print-nilai', function () {
     return $pdf->download('data-nilai.pdf');
 })->name('nilai.print');
 
-//knn controller
-Route::get('/predict', [KNNController::class, 'predict'])->name('predict');
-
-Route::get('/test', fn() => view('test'));
-
-
+// Route auth default Laravel Breeze
 require __DIR__.'/auth.php';

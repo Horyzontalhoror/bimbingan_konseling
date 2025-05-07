@@ -14,12 +14,18 @@
         <input type="text" name="name" class="form-control" required>
     </div>
     <div class="mb-3">
-        <label>NIS</label>
-        <input type="text" name="nis" class="form-control" required>
+        <label>NISN</label>
+        <input type="text" name="nisn" class="form-control" required>
     </div>
     <div class="mb-3">
         <label>Kelas</label>
-        <input type="text" name="class" class="form-control" required>
+        <select name="class" class="form-control" required>
+            <option value="">Pilih</option>
+            <option value="VIII-A">VIII-A</option>
+            <option value="VIII-B">VIII-B</option>
+            <option value="VIII-C">VIII-C</option>
+            <option value="VIII-D">VIII-D</option>
+        </select>
     </div>
     <div class="mb-3">
         <label>Jenis Kelamin</label>

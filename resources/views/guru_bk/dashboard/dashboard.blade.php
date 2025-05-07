@@ -93,7 +93,6 @@
                     <div class="col-md-3">
                         <select name="kelas" class="form-control">
                             <option value="">Semua Kelas</option>
-                            {{-- @foreach($siswa->pluck('class')->unique() as $kelas) --}}
                             @foreach($semuaKelas as $kelas)
 
                                 <option value="{{ $kelas }}" {{ request('kelas') == $kelas ? 'selected' : '' }}>{{ $kelas }}</option>
@@ -108,7 +107,7 @@
 
                 <div class="table-responsive">
                     <table class="table table-bordered">
-                        <thead>
+                        <thead class="thead-dark">
                             <tr>
                                 <th>Nama</th>
                                 <th>Kelas</th>
@@ -141,6 +140,10 @@
 
                 <div class="mt-3">
                     {{ $siswa->links('pagination::bootstrap-4') }}
+                    <p class="text-muted">
+                        Menampilkan {{ $siswa->firstItem() }} - {{ $siswa->lastItem() }} dari total {{ $siswa->total() }} Siswa
+                    </p>
+
                 </div>
             </div>
         </div>

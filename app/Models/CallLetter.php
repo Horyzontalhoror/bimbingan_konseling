@@ -4,17 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CounselingSchedule extends Model
+class CallLetter extends Model
 {
     protected $fillable = [
         'student_id',
-        'date',
-        'time',
-        'note',
-        'status',
+        'wali_kelas',
+        'tanggal',
+        'keperluan',
+        'file',
     ];
+
     public function student()
     {
-        return $this->belongsTo(\App\Models\Student::class);
+        return $this->belongsTo(Student::class);
     }
 }

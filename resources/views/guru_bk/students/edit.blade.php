@@ -15,8 +15,8 @@
         <input type="text" name="name" class="form-control" value="{{ $student->name }}" required>
     </div>
     <div class="mb-3">
-        <label>NIS</label>
-        <input type="text" name="nis" class="form-control" value="{{ $student->nis }}" required>
+        <label>NISN</label>
+        <input type="text" name="nisn" class="form-control" value="{{ $student->nisn }}" required>
     </div>
     <div class="mb-3">
         <label>Kelas</label>
