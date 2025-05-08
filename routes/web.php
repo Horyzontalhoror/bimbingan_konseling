@@ -62,7 +62,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/predict', [KNNController::class, 'predict'])->name('predict');
 
     // Data nilai
-    Route::resource('nilai', NilaiController::class)->only(['index']);
     Route::resource('nilai', NilaiController::class);
 });
 
