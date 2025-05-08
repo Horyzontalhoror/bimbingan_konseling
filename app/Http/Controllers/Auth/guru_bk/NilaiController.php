@@ -42,18 +42,23 @@ class NilaiController extends Controller
 
         return view('guru_bk.nilai.index', compact('data', 'semuaKelas'));
     }
-    // edit
+
     public function edit($id)
     {
         $nilai = DB::table('nilai')->where('id', $id)->first();
+        if (!$nilai) {
+            abort(404);
+        }
 
         return view('guru_bk.nilai.edit', compact('nilai'));
     }
 
-    // update
     public function update(Request $request, $id)
     {
         $request->validate([
+            'name' => 'required|string|max:255',
+            'nisn' => 'required|string|max:20',
+            'class' => 'required|string|max:20',
             'bindo' => 'required|numeric',
             'bing' => 'required|numeric',
             'mat' => 'required|numeric',
@@ -66,30 +71,42 @@ class NilaiController extends Controller
             'penjas' => 'required|numeric',
         ]);
 
-        $data = $request->only(['bindo', 'bing', 'mat', 'ipa', 'ips', 'agama', 'ppkn', 'sosbud', 'tik', 'penjas']);
+        // Ambil semua nilai pelajaran
+        $mapel = $request->only([
+            'bindo', 'bing', 'mat', 'ipa', 'ips', 'agama',
+            'ppkn', 'sosbud', 'tik', 'penjas'
+        ]);
 
-        // Hitung ulang jumlah & rata-rata
-        $jumlah = array_sum($data);
-        $rata = $jumlah / count($data);
+        // Hitung ulang jumlah dan rata-rata
+        $jumlah = array_sum($mapel);
+        $rata = $jumlah / count($mapel);
 
-        $data['jumlah_nilai'] = $jumlah;
-        $data['rata_rata'] = $rata;
-
-        // Update kategori
+        // Tentukan kategori
         if ($rata >= 85) {
-            $data['kategori'] = 'Baik';
-        } elseif ($rata >= 70) {
-            $data['kategori'] = 'Cukup';
+            $kategori = 'Baik';
+        } elseif ($rata >= 75) {
+            $kategori = 'Cukup';
         } else {
-            $data['kategori'] = 'Butuh Bimbingan';
+            $kategori = 'Butuh Bimbingan';
         }
+
+        // Gabungkan semua data
+        $data = array_merge(
+            $request->only(['name', 'nisn', 'class']),
+            $mapel,
+            [
+                'jumlah_nilai' => $jumlah,
+                'rata_rata' => $rata,
+                'kategori' => $kategori,
+            ]
+        );
 
         DB::table('nilai')->where('id', $id)->update($data);
 
         return redirect()->route('nilai.index')->with('success', 'Nilai siswa berhasil diperbarui.');
+        dd($request->all());
     }
 
-    // destroy
     public function destroy($id)
     {
         DB::table('nilai')->where('id', $id)->delete();

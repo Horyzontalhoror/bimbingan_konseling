@@ -17,17 +17,20 @@
                         <!-- Info Siswa -->
                         <div class="form-group">
                             <label>Nama</label>
-                            <input type="text" class="form-control" value="{{ $nilai->name }}" disabled>
+                            <input type="text" class="form-control" value="{{ $nilai->name }}" readonly>
+                            <input type="hidden" name="name" value="{{ $nilai->name }}">
                         </div>
 
                         <div class="form-group">
                             <label>NISN</label>
-                            <input type="text" class="form-control" value="{{ $nilai->nisn }}" disabled>
+                            <input type="text" class="form-control" value="{{ $nilai->nisn }}" readonly>
+                            <input type="hidden" name="nisn" value="{{ $nilai->nisn }}">
                         </div>
 
                         <div class="form-group">
                             <label>Kelas</label>
-                            <input type="text" class="form-control" value="{{ $nilai->class }}" disabled>
+                            <input type="text" class="form-control" value="{{ $nilai->class }}" readonly>
+                            <input type="hidden" name="class" value="{{ $nilai->class }}">
                         </div>
 
                         <!-- Nilai Mapel -->
