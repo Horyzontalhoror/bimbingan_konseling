@@ -14,10 +14,37 @@ use App\Http\Controllers\Auth\guru_bk\CallLetterController;
 use App\Http\Controllers\Auth\guru_bk\ViolationController;
 use App\Http\Controllers\Auth\guru_bk\NilaiController;
 
+use App\Http\Controllers\Auth\Parent\ParentLoginController;
+use App\Http\Controllers\Auth\Student\StudentLoginController;
 
 use App\Exports\NilaiExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+
+
+
+// rotute login
+// Login siswa
+Route::prefix('siswa')->name('student.')->group(function () {
+    Route::get('/login', [StudentLoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [StudentLoginController::class, 'login'])->name('login.submit');
+    Route::post('/siswa/logout', [StudentLoginController::class, 'logout'])->name('student.logout');
+
+    Route::middleware('auth:student')->group(function () {
+        Route::get('/dashboard', fn() => view('siswa.dashboard'))->name('dashboard');
+    });
+});
+
+// Login orang tua
+Route::prefix('orangtua')->name('parent.')->group(function () {
+    Route::get('/login', [ParentLoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [ParentLoginController::class, 'login'])->name('login.submit');
+    Route::post('/orangtua/logout', [ParentLoginController::class, 'logout'])->name('parent.logout');
+
+    Route::middleware('auth:parent')->group(function () {
+        Route::get('/dashboard', fn() => view('orangtua.dashboard'))->name('dashboard');
+    });
+});
 
 // Halaman awal
 Route::view('/', 'welcome');
