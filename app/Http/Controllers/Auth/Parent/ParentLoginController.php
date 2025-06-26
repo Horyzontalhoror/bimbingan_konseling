@@ -35,6 +35,6 @@ class ParentLoginController extends Controller
         Auth::guard('parent')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect(route('parent.login'));
+        return redirect('/');
     }
 }

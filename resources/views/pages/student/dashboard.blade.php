@@ -1,4 +1,4 @@
-@extends('layouts.parent')
+@extends('layouts.student')
 
 @section('title', 'Dashboard Siswa')
 

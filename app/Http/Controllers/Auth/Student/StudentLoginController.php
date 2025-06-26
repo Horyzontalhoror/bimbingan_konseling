@@ -35,6 +35,6 @@ class StudentLoginController extends Controller
         Auth::guard('student')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect(route('student.login'));
+        return redirect('/');
     }
 }
