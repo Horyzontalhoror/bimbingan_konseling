@@ -13,9 +13,10 @@ use App\Http\Controllers\Auth\guru_bk\DashboardController;
 use App\Http\Controllers\Auth\guru_bk\CallLetterController;
 use App\Http\Controllers\Auth\guru_bk\ViolationController;
 use App\Http\Controllers\Auth\guru_bk\NilaiController;
-
+use App\Http\Controllers\Auth\guru_bk\AlgoritmaController;
 use App\Http\Controllers\Auth\Parent\ParentLoginController;
 use App\Http\Controllers\Auth\Student\StudentLoginController;
+use App\Http\Controllers\Auth\guru_bk\RekomendasiController;
 
 use App\Exports\NilaiExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -82,6 +83,19 @@ Route::middleware(['auth:web'])->group(function () {
 
     Route::get('/cluster', [KMeansController::class, 'cluster'])->name('cluster');
     Route::get('/predict', [KNNController::class, 'predict'])->name('predict');
+
+    // Halaman untuk melihat hasil algoritma K-Means dan KNN
+    Route::get('/algoritma', [AlgoritmaController::class, 'index'])->name('algoritma.index');
+    Route::get('/algoritma/kmeans/{id}/edit', [AlgoritmaController::class, 'edit'])->name('algoritma.kmeans.edit');
+    Route::put('/algoritma/kmeans/{id}', [AlgoritmaController::class, 'update'])->name('algoritma.kmeans.update');
+    Route::post('/algoritma/reset-knn', [AlgoritmaController::class, 'resetKategoriDanPrediksi'])->name('algoritma.reset.knn');
+
+    Route::get('/algoritma/kmeans', [KMeansController::class, 'index'])->name('algoritma.kmeans');
+    Route::get('/algoritma/knn', [KNNController::class, 'index'])->name('algoritma.knn');
+
+    // Rekomendasi siswa
+    Route::get('/rekomendasi', [RekomendasiController::class, 'perbandingan'])->name('rekomendasi.perbandingan');
+
 });
 
 // =====================
@@ -95,23 +109,28 @@ Route::get('/profile/photo/{path}', function ($path) {
     return response()->file(storage_path('app/' . $filePath));
 })->name('profile.photo');
 
+// =====================
+// EXPORT & PRINT NILAI
+// =====================
 Route::get('/export-nilai', function () {
     return Excel::download(new NilaiExport, 'data-nilai.xlsx');
 })->name('nilai.export');
 
 Route::get('/print-nilai', function () {
     $siswa = DB::table('nilai')
-        ->when(request('kategori'), fn($q) => $q->where('kategori', request('kategori')))
-        ->when(request('kelas'), fn($q) => $q->where('class', request('kelas')))
+        ->join('students', 'nilai.nisn', '=', 'students.nisn')
+        ->select('nilai.*', 'students.name', 'students.class')
+        ->when(request('kategori'), fn($q) => $q->where('nilai.kategori', request('kategori')))
+        ->when(request('kelas'), fn($q) => $q->where('students.class', request('kelas')))
         ->when(request('q'), function ($q) {
             $search = request('q');
             $q->where(function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('nisn', 'like', "%{$search}%");
+                $query->where('students.name', 'like', "%{$search}%")
+                      ->orWhere('nilai.nisn', 'like', "%{$search}%");
             });
         })
-        ->orderBy('kategori')
-        ->orderByDesc('rata_rata')
+        ->orderBy('nilai.kategori')
+        ->orderByDesc('nilai.rata_rata')
         ->get();
 
     $pdf = Pdf::loadView('nilai.pdf', compact('siswa'));

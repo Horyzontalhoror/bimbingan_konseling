@@ -17,16 +17,45 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="{{ route('nilai.index') }}">
-            <i class="fas fa-table"></i>
-            <span>Data Nilai</span>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#algoritmaDropdown"
+            aria-expanded="false" aria-controls="algoritmaDropdown">
+            <i class="fas fa-tools"></i>
+            <span>Algoritma</span>
         </a>
+        <div id="algoritmaDropdown" class="collapse" aria-labelledby="headingAlgoritma" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('algoritma.index') }}">
+                    <i class="fas fa-brain"></i><samp> Algoritma</samp>
+                </a>
+                <a class="collapse-item" href="{{ route('rekomendasi.perbandingan') }}">
+                    <i class="fas fa-cogs"></i><samp> Rekomendasi</samp>
+                </a>
+            </div>
+        </div>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="{{ route('students.index') }}">
-            <i class="fas fa-fw fa-users"></i>
-            <span>Data Siswa</span>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#dataDropdown"
+            aria-expanded="false" aria-controls="dataDropdown">
+            <i class="fas fa-fw fa-folder"></i>
+            <span>Data Master</span>
+        </a>
+        <div id="dataDropdown" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('nilai.index') }}">
+                    <i class="fas fa-table"></i><samp> Data Nilai</samp>
+                </a>
+                <a class="collapse-item" href="{{ route('students.index') }}">
+                    <i class="fas fa-fw fa-users"></i><samp> Data Siswa</samp>
+                </a>
+            </div>
+        </div>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="{{ route('violations.index') }}">
+            <i class="fas fa-fw fa-exclamation-triangle"></i>
+            <span>Pelanggaran</span>
         </a>
     </li>
 
@@ -34,13 +63,6 @@
         <a class="nav-link" href="{{ route('schedules.index') }}">
             <i class="fas fa-fw fa-calendar"></i>
             <span>Jadwal Konseling</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('violations.index') }}">
-            <i class="fas fa-fw fa-exclamation-triangle"></i>
-            <span>Pelanggaran</span>
         </a>
     </li>
 

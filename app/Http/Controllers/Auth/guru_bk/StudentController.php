@@ -45,12 +45,9 @@ class StudentController extends Controller
             'name' => 'required|string|max:255',
             'nisn' => 'required|string|unique:students,nisn',
             'class' => 'required|string',
-            'gender' => 'required|in:Laki-laki,Perempuan',
-            'address' => 'nullable|string',
-            'birth_date' => 'nullable|date',
         ]);
         Student::create($request->only([
-            'name', 'nisn', 'class', 'gender', 'address', 'birth_date'
+            'name', 'nisn', 'class'
         ]));
         return redirect()->route('students.index')->with('success', 'Data siswa berhasil ditambahkan.');
     }
@@ -67,12 +64,9 @@ class StudentController extends Controller
             'name' => 'required|string|max:255',
             'nisn' => 'required|string|max:20|unique:students,nisn,' . $student->id,
             'class' => 'required|string|max:20',
-            'gender' => 'required|in:Laki-laki,Perempuan',
-            'address' => 'nullable|string|max:255',
-            'birth_date' => 'nullable|date',
         ]);
         $student->update($request->only([
-            'name', 'nisn', 'class', 'gender', 'address', 'birth_date'
+            'name', 'nisn', 'class'
         ]));
         return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui.');
     }

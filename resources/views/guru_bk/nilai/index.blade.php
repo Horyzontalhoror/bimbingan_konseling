@@ -93,6 +93,7 @@
                                         <td>{{ $s->penjas }}</td>
                                         <td>{{ $s->jumlah_nilai }}</td>
                                         <td>{{ $s->rata_rata }}</td>
+                                        {{-- <td>{{ number_format($s->rata_rata, 2) }}</td> --}}
                                         <td>
                                             <span class="badge
                                                 @if($s->kategori == 'Baik') badge-success

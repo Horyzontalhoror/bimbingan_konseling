@@ -17,19 +17,25 @@
             <div class="card border-left-primary shadow mb-3">
                 <div class="card-body">
                     <div class="text-xs font-weight-bold text-uppercase mb-1">Baik</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">49 Siswa</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ $statistik->firstWhere('kategori', 'Baik')->total ?? 0 }} Siswa
+                    </div>
                 </div>
             </div>
-            <div class="card border-left-primary shadow mb-3">
+            <div class="card border-left-warning shadow mb-3">
                 <div class="card-body">
                     <div class="text-xs font-weight-bold text-uppercase mb-1">Cukup</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">57 Siswa</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ $statistik->firstWhere('kategori', 'Cukup')->total ?? 0 }} Siswa
+                    </div>
                 </div>
             </div>
-            <div class="card border-left-primary shadow">
+            <div class="card border-left-danger shadow">
                 <div class="card-body">
                     <div class="text-xs font-weight-bold text-uppercase mb-1">Butuh Bimbingan</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">1 Siswa</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        {{ $statistik->firstWhere('kategori', 'Butuh Bimbingan')->total ?? 0 }} Siswa
+                    </div>
                 </div>
             </div>
         </div>

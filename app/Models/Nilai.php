@@ -26,4 +26,10 @@ class Nilai extends Model
         'rata_rata',
         'kategori',
     ];
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class, 'nisn', 'nisn');
+    }
+
 }

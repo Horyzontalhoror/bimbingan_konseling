@@ -8,33 +8,33 @@ use Illuminate\Support\Facades\DB;
 
 class NilaiController extends Controller
 {
-    public function index()
+   public function index()
     {
-        $query = DB::table('nilai');
+        $query = DB::table('nilai')
+            ->join('students', 'nilai.nisn', '=', 'students.nisn')
+            ->select('nilai.*', 'students.name', 'students.class');
 
-        // Terapkan filter jika ada
         if (request('kategori')) {
-            $query->where('kategori', request('kategori'));
+            $query->where('nilai.kategori', request('kategori'));
         }
 
         if (request('kelas')) {
-            $query->where('class', request('kelas'));
+            $query->where('students.class', request('kelas'));
         }
 
         if (request('q')) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . request('q') . '%')
-                  ->orWhere('nisn', 'like', '%' . request('q') . '%');
+                $q->where('students.name', 'like', '%' . request('q') . '%')
+                ->orWhere('nilai.nisn', 'like', '%' . request('q') . '%');
             });
         }
 
-        $data = $query->orderBy('kategori')
-                      ->orderByDesc('rata_rata')
-                      ->paginate(20)
-                      ->appends(request()->query());
+        $data = $query->orderBy('nilai.kategori')
+                    ->orderByDesc('nilai.rata_rata')
+                    ->paginate(20)
+                    ->appends(request()->query());
 
-        // Ambil semua kelas unik
-        $semuaKelas = DB::table('nilai')
+        $semuaKelas = DB::table('students')
             ->select('class')
             ->distinct()
             ->orderBy('class')
@@ -43,22 +43,25 @@ class NilaiController extends Controller
         return view('guru_bk.nilai.index', compact('data', 'semuaKelas'));
     }
 
+
     public function edit($id)
     {
         $nilai = DB::table('nilai')->where('id', $id)->first();
-        if (!$nilai) {
-            abort(404);
-        }
+        if (!$nilai) abort(404);
 
-        return view('guru_bk.nilai.edit', compact('nilai'));
+        // Ambil data siswa berdasarkan nisn
+        $siswa = DB::table('students')
+            ->where('nisn', $nilai->nisn)
+            ->select('name', 'class')
+            ->first();
+
+        return view('guru_bk.nilai.edit', compact('nilai', 'siswa'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
             'nisn' => 'required|string|max:20',
-            'class' => 'required|string|max:20',
             'bindo' => 'required|numeric',
             'bing' => 'required|numeric',
             'mat' => 'required|numeric',
@@ -71,17 +74,14 @@ class NilaiController extends Controller
             'penjas' => 'required|numeric',
         ]);
 
-        // Ambil semua nilai pelajaran
         $mapel = $request->only([
             'bindo', 'bing', 'mat', 'ipa', 'ips', 'agama',
             'ppkn', 'sosbud', 'tik', 'penjas'
         ]);
 
-        // Hitung ulang jumlah dan rata-rata
         $jumlah = array_sum($mapel);
         $rata = $jumlah / count($mapel);
 
-        // Tentukan kategori
         if ($rata >= 85) {
             $kategori = 'Baik';
         } elseif ($rata >= 75) {
@@ -90,9 +90,8 @@ class NilaiController extends Controller
             $kategori = 'Butuh Bimbingan';
         }
 
-        // Gabungkan semua data
         $data = array_merge(
-            $request->only(['name', 'nisn', 'class']),
+            ['nisn' => $request->nisn],
             $mapel,
             [
                 'jumlah_nilai' => $jumlah,
@@ -104,7 +103,6 @@ class NilaiController extends Controller
         DB::table('nilai')->where('id', $id)->update($data);
 
         return redirect()->route('nilai.index')->with('success', 'Nilai siswa berhasil diperbarui.');
-        dd($request->all());
     }
 
     public function destroy($id)
