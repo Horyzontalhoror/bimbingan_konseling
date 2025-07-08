@@ -122,6 +122,19 @@ return new class extends Migration {
             $table->integer('max_jumlah')->nullable(); // batas maksimal jika diperlukan
             $table->timestamps();
         });
+
+        // surat panggialan
+        Schema::create('call_letters', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('student_id');
+            $table->string('wali_kelas');
+            $table->date('tanggal');
+            $table->text('keperluan');
+            $table->string('file')->nullable(); // jika menyimpan file PDF
+            $table->timestamps();
+
+            $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
+        });
     }
 
     public function down(): void
@@ -134,5 +147,6 @@ return new class extends Migration {
         Schema::dropIfExists('absensi');
         Schema::dropIfExists('nilai');
         Schema::dropIfExists('students');
+        Schema::dropIfExists('call_letters');
     }
 };
