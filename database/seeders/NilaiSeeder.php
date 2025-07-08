@@ -129,7 +129,6 @@ class NilaiSeeder extends Seeder
 
             $d['jumlah_nilai'] = $jumlah;
             $d['rata_rata'] = $rata;
-            $d['kategori'] = null;
             $d['created_at'] = now();
             $d['updated_at'] = now();
         }

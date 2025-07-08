@@ -1,9 +1,15 @@
 <?php
 
 namespace App\Http\Controllers\Auth\guru_bk;
+
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Models\Nilai;
+use App\Models\Absensi;
+use App\Models\JenisPelanggaran;
+use App\Models\Violation;
 
 class StudentController extends Controller
 {
@@ -15,7 +21,7 @@ class StudentController extends Controller
         if (request('q')) {
             $query->where(function ($q) {
                 $q->where('name', 'like', '%' . request('q') . '%')
-                  ->orWhere('nisn', 'like', '%' . request('q') . '%');
+                    ->orWhere('nisn', 'like', '%' . request('q') . '%');
             });
         }
 
@@ -24,7 +30,7 @@ class StudentController extends Controller
             $query->where('class', request('kelas'));
         }
 
-        $students = $query->latest()->paginate(20)->appends(request()->query());
+        $students = $query->latest()->paginate(27)->appends(request()->query());
 
         // Ambil semua kelas unik
         $semuaKelas = Student::select('class')->distinct()->orderBy('class')->pluck('class');
@@ -32,26 +38,77 @@ class StudentController extends Controller
         return view('guru_bk.students.index', compact('students', 'semuaKelas'));
     }
 
-
+    // create data baru
     public function create()
     {
-        return view('guru_bk.students.create');
+        $jenisPelanggaran = JenisPelanggaran::all();
+        return view('guru_bk.students.create', compact('jenisPelanggaran'));
     }
 
+    // store
     public function store(Request $request)
     {
-        // Validasi input
+        $nisn = $request->nisn;
         $request->validate([
             'name' => 'required|string|max:255',
             'nisn' => 'required|string|unique:students,nisn',
-            'class' => 'required|string',
+            'class' => 'required|string|max:255',
+            'nilai.*' => 'required|numeric|min:0|max:100',
+            'absensi.*' => 'required|integer|min:0',
+            'pelanggaran.*.jenis_id' => 'nullable|exists:jenis_pelanggaran,id',
+            'pelanggaran.*.tanggal' => 'nullable|date',
+            'pelanggaran.*.keterangan' => 'nullable|string|max:255',
         ]);
-        Student::create($request->only([
-            'name', 'nisn', 'class'
-        ]));
-        return redirect()->route('students.index')->with('success', 'Data siswa berhasil ditambahkan.');
+
+        DB::transaction(function () use ($request, $nisn) {
+            // Simpan siswa
+            Student::create($request->only(['name', 'nisn', 'class']));
+
+            // Simpan nilai
+            $nilaiData = $request->nilai ?? [];
+            \App\Models\Nilai::create(array_merge($nilaiData, [
+                'nisn' => $nisn,
+                'jumlah_nilai' => array_sum($nilaiData),
+                'rata_rata' => count($nilaiData) ? round(array_sum($nilaiData) / count($nilaiData), 2) : 0,
+            ]));
+
+            // Simpan absensi
+            \App\Models\Absensi::create(array_merge($request->absensi ?? [], [
+                'nisn' => $nisn,
+                'tanggal' => now(),
+            ]));
+
+            // Simpan pelanggaran
+            foreach ($request->pelanggaran ?? [] as $p) {
+                if (!empty($p['jenis_id'])) {
+                    Violation::create([
+                        'nisn' => $nisn,
+                        'jenis_pelanggaran_id' => $p['jenis_id'],
+                        'date' => $p['tanggal'] ?? now(),
+                        'description' => $p['keterangan'] ?? null,
+                        'action' => null,
+                    ]);
+                }
+            }
+        });
+
+        // Cek referensi KMeans tersedia
+        $count = DB::table('rekomendasi_siswa')->where('metode', 'like', 'KMeans%')->count();
+        if ($count < 3) {
+            return redirect()->route('students.index')
+                ->with('error', 'Data referensi KMeans belum tersedia. Jalankan KMeans terlebih dahulu.');
+        }
+
+        // Jalankan KNN
+        if (is_string($nisn) && !empty($nisn)) {
+            app(\App\Http\Controllers\Auth\guru_bk\KNNController::class)->klasifikasiBaru($nisn);
+        }
+
+        return redirect()->route('students.index')
+            ->with('success', 'Data siswa berhasil ditambahkan dan diklasifikasi.');
     }
 
+    // edit
     public function edit(Student $student)
     {
         return view('guru_bk.students.edit', compact('student'));
@@ -66,7 +123,9 @@ class StudentController extends Controller
             'class' => 'required|string|max:20',
         ]);
         $student->update($request->only([
-            'name', 'nisn', 'class'
+            'name',
+            'nisn',
+            'class'
         ]));
         return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui.');
     }

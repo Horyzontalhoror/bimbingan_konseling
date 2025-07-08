@@ -11,10 +11,11 @@ class AlgoritmaController extends Controller
 {
     public function index()
     {
-        // Hasil dari tabel nilai (hasil clustering KMeans)
-        $kmeansResults = DB::table('nilai')
-            ->join('students', 'nilai.nisn', '=', 'students.nisn')
-            ->select('students.name', 'students.class', 'students.nisn', 'nilai.kategori as cluster')
+        // Hasil clustering KMeans dari tabel rekomendasi_siswa
+        $kmeansResults = DB::table('rekomendasi_siswa')
+            ->join('students', 'rekomendasi_siswa.nisn', '=', 'students.nisn')
+            ->select('students.name', 'students.class', 'students.nisn', 'rekomendasi_siswa.kategori as cluster')
+            ->where('rekomendasi_siswa.metode', 'KMeans-Nilai')
             ->orderBy('cluster')
             ->get();
 
@@ -22,16 +23,16 @@ class AlgoritmaController extends Controller
         $knnResults = DB::table('rekomendasi_siswa')
             ->join('students', 'rekomendasi_siswa.nisn', '=', 'students.nisn')
             ->select('students.name', 'students.class', 'students.nisn', 'rekomendasi_siswa.kategori as prediksi')
-            ->where('metode', 'KNN')
+            ->where('rekomendasi_siswa.metode', 'KNN')
             ->get();
 
-        // Semua data rekomendasi (termasuk untuk tabel di bawah)
-        $rekomendasi = DB::table('rekomendasi_siswa')->get();
+        // Semua data rekomendasi
+        $rekomendasi = DB::table('rekomendasi_siswa')
+            ->join('students', 'rekomendasi_siswa.nisn', '=', 'students.nisn')
+            ->select('rekomendasi_siswa.*', 'students.name', 'students.class')
+            ->get();
 
-        // Ambil konfigurasi KMeans dari tabel konfigurasi_kmeans
-        $konfigurasiKMeans = DB::table('konfigurasi_kmeans')->orderBy('nilai_centroid')->get();
-
-        return view('guru_bk.algoritma.index', compact('kmeansResults', 'knnResults', 'rekomendasi', 'konfigurasiKMeans'));
+        return view('guru_bk.algoritma.index', compact('kmeansResults', 'knnResults', 'rekomendasi'));
     }
 
     /**
@@ -70,22 +71,27 @@ class AlgoritmaController extends Controller
 
         return redirect()->route('algoritma.index')->with('success', 'Konfigurasi centroid berhasil diperbarui.');
     }
+
     /**
      * Reset KNN categories and predictions.
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function resetKategoriDanPrediksi()
+    public function resetKategori()
     {
-        // Kosongkan kategori di tabel nilai
-        DB::table('nilai')->update(['kategori' => null]);
-
-        // Hapus data KNN & Final di rekomendasi_siswa
         DB::table('rekomendasi_siswa')
-            ->whereIn('metode', ['KNN', 'Final'])
+            ->whereIn('kategori', [
+                'Rajin',
+                'Cukup',
+                'Sering Absen',
+                'Butuh Bimbingan',
+                'Baik',
+                'Tidak Pernah',
+                'Ringan',
+                'Sering'
+            ])
             ->delete();
 
-        // Jalankan KNN setelah reset
-        return app(KNNController::class)->predict();
+        return redirect()->route('algoritma.index')->with('success', 'Berhasil direset.');
     }
 }

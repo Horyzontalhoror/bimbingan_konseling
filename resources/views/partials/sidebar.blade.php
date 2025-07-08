@@ -25,38 +25,64 @@
         <div id="algoritmaDropdown" class="collapse" aria-labelledby="headingAlgoritma" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('algoritma.index') }}">
-                    <i class="fas fa-brain"></i><samp> Algoritma</samp>
+                    <i class="fas fa-brain"></i>
+                    <samp> Algoritma</samp>
                 </a>
                 <a class="collapse-item" href="{{ route('rekomendasi.perbandingan') }}">
-                    <i class="fas fa-cogs"></i><samp> Rekomendasi</samp>
+                    <i class="fas fa-lightbulb"></i>
+                    <samp> Rekomendasi</samp>
+                </a>
+                <a class="collapse-item" href="{{ route('konfigurasi.index') }}">
+                    <i class="fas fa-sliders-h"></i>
+                    <samp> Konfigurasi</samp>
                 </a>
             </div>
         </div>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#dataDropdown"
-            aria-expanded="false" aria-controls="dataDropdown">
-            <i class="fas fa-fw fa-folder"></i>
-            <span>Data Master</span>
+        <a class="nav-link" href="{{ route('students.index') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Data Siswa</span>
         </a>
-        <div id="dataDropdown" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{ route('nilai.index') }}">
-                    <i class="fas fa-table"></i><samp> Data Nilai</samp>
-                </a>
-                <a class="collapse-item" href="{{ route('students.index') }}">
-                    <i class="fas fa-fw fa-users"></i><samp> Data Siswa</samp>
-                </a>
-            </div>
-        </div>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="{{ route('violations.index') }}">
-            <i class="fas fa-fw fa-exclamation-triangle"></i>
+        <a class="nav-link" href="{{ route('nilai.index') }}">
+            <i class="fas fa-table"></i>
+            <span>Data Nilai</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="{{ route('absensi.index') }}">
+            <i class="fas fa-fw fa-clipboard-list"></i>
+            <span>Absensi</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
+
+    </li>
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#pelanggaranDropdown"
+            aria-expanded="false" aria-controls="pelanggaranDropdown">
+            <i class="fas fa-exclamation-triangle"></i>
             <span>Pelanggaran</span>
         </a>
+        <div id="pelanggaranDropdown" class="collapse" aria-labelledby="headingPelanggaran"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('violations.index') }}">
+                    <i class="fas fa-fw fa-exclamation-triangle"></i>
+                    <span> Pelanggaran</span>
+                </a>
+                <a class="collapse-item" href="{{ route('jenis-pelanggaran.index') }}">
+                    <i class="fas fa-fw fa-list-alt"></i>
+                    <span> Jenis Pelanggaran</span>
+                </a>
+            </div>
+        </div>
     </li>
 
     <li class="nav-item">

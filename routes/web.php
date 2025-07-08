@@ -14,50 +14,61 @@ use App\Http\Controllers\Auth\guru_bk\CallLetterController;
 use App\Http\Controllers\Auth\guru_bk\ViolationController;
 use App\Http\Controllers\Auth\guru_bk\NilaiController;
 use App\Http\Controllers\Auth\guru_bk\AlgoritmaController;
+use App\Http\Controllers\Auth\guru_bk\RekomendasiController;
+use App\Http\Controllers\Auth\guru_bk\JenisPelanggaranController;
+use App\Http\Controllers\Auth\guru_bk\AbsensiController;
+use App\Http\Controllers\Auth\guru_bk\KonfigurasiKMeansController;
+
+use App\Http\Controllers\Auth\guru_bk\KMeans\KMeansNilaiController;
+use App\Http\Controllers\Auth\guru_bk\KMeans\KMeansAbsenController;
+use App\Http\Controllers\Auth\guru_bk\KMeans\KMeansPelanggaranController;
+
 use App\Http\Controllers\Auth\Parent\ParentLoginController;
 use App\Http\Controllers\Auth\Student\StudentLoginController;
-use App\Http\Controllers\Auth\guru_bk\RekomendasiController;
 
 use App\Exports\NilaiExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-// =====================
-// AUTH SISWA
-// =====================
+// ==============================
+// AUTHENTIKASI SISWA
+// ==============================
 Route::prefix('siswa')->name('student.')->group(function () {
-    Route::get('/login', [StudentLoginController::class, 'showLoginForm'])->middleware('guest:student')->name('login');
+    Route::middleware('guest:student')->group(function () {
+        Route::get('/login', [StudentLoginController::class, 'showLoginForm'])->name('login');
+    });
     Route::post('/login', [StudentLoginController::class, 'login'])->name('login.submit');
     Route::post('/logout', [StudentLoginController::class, 'logout'])->name('logout');
 
     Route::middleware('auth:student')->group(function () {
-        Route::get('/dashboard', fn() => view('siswa.dashboard'))->name('dashboard');
+        Route::view('/dashboard', 'siswa.dashboard')->name('dashboard');
     });
 });
 
-// =====================
-// AUTH ORANG TUA
-// =====================
+// ==============================
+// AUTHENTIKASI ORANG TUA
+// ==============================
 Route::prefix('orangtua')->name('parent.')->group(function () {
-    Route::get('/login', [ParentLoginController::class, 'showLoginForm'])->middleware('guest:parent')->name('login');
+    Route::middleware('guest:parent')->group(function () {
+        Route::get('/login', [ParentLoginController::class, 'showLoginForm'])->name('login');
+    });
     Route::post('/login', [ParentLoginController::class, 'login'])->name('login.submit');
     Route::post('/logout', [ParentLoginController::class, 'logout'])->name('logout');
 
     Route::middleware('auth:parent')->group(function () {
-        Route::get('/dashboard', fn() => view('orangtua.dashboard'))->name('dashboard');
+        Route::view('/dashboard', 'orangtua.dashboard')->name('dashboard');
     });
 });
 
-// =====================
-// HALAMAN AWAL
-// =====================
+// ==============================
+// HALAMAN UTAMA & PROFIL BK
+// ==============================
 Route::view('/', 'welcome');
+Route::view('profile', 'profile')->middleware('auth')->name('profile');
 
-// =====================
-// PROFIL & LOGOUT BK
-// =====================
-Route::view('profile', 'profile')->middleware(['auth'])->name('profile');
-
+// ==============================
+// LOGOUT GURU BK
+// ==============================
 Route::post('/logout', function () {
     Auth::guard('web')->logout();
     request()->session()->invalidate();
@@ -65,56 +76,101 @@ Route::post('/logout', function () {
     return redirect('/');
 })->middleware('auth:web')->name('logout');
 
-// =====================
-// GURU BK
-// =====================
-Route::middleware(['auth:web'])->group(function () {
+// ==============================
+// GURU BK (WEB AUTH)
+// ==============================
+Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('students', StudentController::class);
-    Route::resource('schedules', CounselingScheduleController::class);
-    Route::resource('violations', ViolationController::class);
-    Route::resource('nilai', NilaiController::class);
+    Route::resources([
+        'students'   => StudentController::class,
+        'schedules'  => CounselingScheduleController::class,
+        'violations' => ViolationController::class,
+        'nilai'      => NilaiController::class,
+    ]);
 
-    Route::get('/call-letter', [CallLetterController::class, 'index'])->name('call-letter.index');
-    Route::get('/call-letter/create', [CallLetterController::class, 'form'])->name('call-letter.form');
-    Route::post('/call-letter', [CallLetterController::class, 'generate'])->name('call-letter.generate');
-    Route::get('/call-letter/print/{student_id}', [CallLetterController::class, 'print'])->name('call-letter.print');
+    // Surat Panggilan
+    Route::prefix('call-letter')->name('call-letter.')->group(function () {
+        Route::get('/', [CallLetterController::class, 'index'])->name('index');
+        Route::get('/create', [CallLetterController::class, 'form'])->name('form');
+        Route::post('/', [CallLetterController::class, 'generate'])->name('generate');
+        Route::get('/print/{student_id}', [CallLetterController::class, 'print'])->name('print');
+        Route::post('/save', [CallLetterController::class, 'save'])->name('save');
+        Route::get('/{id}', [CallLetterController::class, 'show'])->name('show');
+        Route::delete('/{id}', [CallLetterController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('/cluster', [KMeansController::class, 'cluster'])->name('cluster');
-    Route::get('/predict', [KNNController::class, 'predict'])->name('predict');
 
-    // Halaman untuk melihat hasil algoritma K-Means dan KNN
-    Route::get('/algoritma', [AlgoritmaController::class, 'index'])->name('algoritma.index');
-    Route::get('/algoritma/kmeans/{id}/edit', [AlgoritmaController::class, 'edit'])->name('algoritma.kmeans.edit');
-    Route::put('/algoritma/kmeans/{id}', [AlgoritmaController::class, 'update'])->name('algoritma.kmeans.update');
-    Route::post('/algoritma/reset-knn', [AlgoritmaController::class, 'resetKategoriDanPrediksi'])->name('algoritma.reset.knn');
+    // Algoritma
+    Route::prefix('algoritma')->name('algoritma.')->group(function () {
+        Route::get('/', [AlgoritmaController::class, 'index'])->name('index');
+        Route::get('/kmeans', [KMeansController::class, 'index'])->name('kmeans');
+        Route::get('/knn', [KNNController::class, 'index'])->name('knn');
+        Route::get('/kmeans/{id}/edit', [AlgoritmaController::class, 'edit'])->name('kmeans.edit');
+        Route::put('/kmeans/{id}', [AlgoritmaController::class, 'update'])->name('kmeans.update');
 
-    Route::get('/algoritma/kmeans', [KMeansController::class, 'index'])->name('algoritma.kmeans');
-    Route::get('/algoritma/knn', [KNNController::class, 'index'])->name('algoritma.knn');
+        // reser data
+        Route::post('/reset-Kategori', [AlgoritmaController::class, 'resetKategori'])->name('reset.kategori');
+    });
 
-    // Rekomendasi siswa
+    // Konfigurasi KMeans
+    Route::prefix('konfigurasi')->name('konfigurasi.')->group(function () {
+        Route::get('/', [KonfigurasiKMeansController::class, 'index'])->name('index');
+        Route::get('/{id}/edit', [KonfigurasiKMeansController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [KonfigurasiKMeansController::class, 'update'])->name('update');
+        Route::resource('konfigurasi', KonfigurasiKMeansController::class);
+    });
+
+    // Proses KMeans per aspek
+    Route::post('/kmeans/nilai', [KMeansNilaiController::class, 'cluster'])->name('kmeans.nilai');
+    Route::post('/kmeans/absen', [KMeansAbsenController::class, 'cluster'])->name('kmeans.absen');
+    Route::post('/kmeans/pelanggaran', [KMeansPelanggaranController::class, 'cluster'])->name('kmeans.pelanggaran');
+
+    // Keputusan akhir KMeans
+    Route::post('/kmeans/final', [KMeansController::class, 'keputusanAkhir'])->name('kmeans.final'); // gunakan ini saja
+    // Route::post('/kmeans/keputusan-akhir', ...) ← HAPUS jika tidak dipakai di Blade
+
+    // Tampilan
+    Route::get('/keputusanAkhir', [KMeansController::class, 'keputusanAkhir'])->name('keputusanAkhir');
+    Route::get('/keputusanAkhirKNN', [KNNController::class, 'keputusanAkhirKNN'])->name('keputusanAkhirKNN');
+    // Rekomendasi
     Route::get('/rekomendasi', [RekomendasiController::class, 'perbandingan'])->name('rekomendasi.perbandingan');
 
+
+    // Jenis Pelanggaran
+    Route::prefix('jenis-pelanggaran')->name('jenis-pelanggaran.')->group(function () {
+        Route::get('/', [JenisPelanggaranController::class, 'index'])->name('index');
+        Route::get('/create', [JenisPelanggaranController::class, 'create'])->name('create');
+        Route::post('/', [JenisPelanggaranController::class, 'store'])->name('store');
+        Route::get('/{jenis}/edit', [JenisPelanggaranController::class, 'edit'])->name('edit');
+        Route::put('/{jenis}', [JenisPelanggaranController::class, 'update'])->name('update');
+        Route::delete('/{jenis}', [JenisPelanggaranController::class, 'destroy'])->name('destroy');
+    });
+
+    // Absensi
+    Route::prefix('guru-bk/absensi')->name('absensi.')->group(function () {
+        Route::get('/', [AbsensiController::class, 'index'])->name('index');
+        Route::get('/create', [AbsensiController::class, 'create'])->name('create');
+        Route::post('/', [AbsensiController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AbsensiController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AbsensiController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AbsensiController::class, 'destroy'])->name('destroy');
+    });
 });
 
-// =====================
+// ==============================
 // UTILITAS UMUM
-// =====================
+// ==============================
 Route::get('/profile/photo/{path}', function ($path) {
     $filePath = 'private/profile-photos/' . $path;
-    if (!Storage::exists($filePath)) {
-        abort(404);
-    }
+    abort_if(!Storage::exists($filePath), 404);
     return response()->file(storage_path('app/' . $filePath));
 })->name('profile.photo');
 
-// =====================
-// EXPORT & PRINT NILAI
-// =====================
-Route::get('/export-nilai', function () {
-    return Excel::download(new NilaiExport, 'data-nilai.xlsx');
-})->name('nilai.export');
+// ==============================
+// EXPORT & CETAK NILAI
+// ==============================
+Route::get('/export-nilai', fn() => Excel::download(new NilaiExport, 'data-nilai.xlsx'))->name('nilai.export');
 
 Route::get('/print-nilai', function () {
     $siswa = DB::table('nilai')
@@ -122,13 +178,10 @@ Route::get('/print-nilai', function () {
         ->select('nilai.*', 'students.name', 'students.class')
         ->when(request('kategori'), fn($q) => $q->where('nilai.kategori', request('kategori')))
         ->when(request('kelas'), fn($q) => $q->where('students.class', request('kelas')))
-        ->when(request('q'), function ($q) {
-            $search = request('q');
-            $q->where(function ($query) use ($search) {
-                $query->where('students.name', 'like', "%{$search}%")
-                      ->orWhere('nilai.nisn', 'like', "%{$search}%");
-            });
-        })
+        ->when(request('q'), fn($q) => $q->where(function ($query) {
+            $query->where('students.name', 'like', '%' . request('q') . '%')
+                ->orWhere('nilai.nisn', 'like', '%' . request('q') . '%');
+        }))
         ->orderBy('nilai.kategori')
         ->orderByDesc('nilai.rata_rata')
         ->get();
@@ -137,5 +190,7 @@ Route::get('/print-nilai', function () {
     return $pdf->download('data-nilai.pdf');
 })->name('nilai.print');
 
-// Route auth default Laravel Breeze
-require __DIR__.'/auth.php';
+// ==============================
+// ROUTE BAWAAN LARAVEL BREEZE
+// ==============================
+require __DIR__ . '/auth.php';

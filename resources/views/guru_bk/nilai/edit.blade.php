@@ -3,6 +3,23 @@
 @section('content')
 <div class="container">
     <h4 class="mb-4">Edit Nilai Siswa</h4>
+
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="row mt-4">
         <div class="col-md-12">
             <div class="card shadow">
@@ -46,7 +63,7 @@
                         ] as $field => $label)
                             <div class="form-group">
                                 <label>{{ $label }}</label>
-                                <input type="number" step="0.01" name="{{ $field }}" class="form-control" value="{{ $nilai->$field }}" required>
+                                <input type="number" step="0.01" name="{{ $field }}" class="form-control" value="{{ old($field, $nilai->$field) }}" required>
                             </div>
                         @endforeach
 
@@ -55,6 +72,7 @@
                                 <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                                 <a href="{{ route('nilai.index') }}" class="btn btn-secondary">Batal</a>
                             </div>
+                    </form>
 
                             <!-- Tombol Hapus -->
                             <form action="{{ route('nilai.destroy', $nilai->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data nilai ini?')">
@@ -63,22 +81,7 @@
                                 <button type="submit" class="btn btn-danger">Hapus Nilai</button>
                             </form>
                         </div>
-                    </form>
-                    @if (session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
 
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>

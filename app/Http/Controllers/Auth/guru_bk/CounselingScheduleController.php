@@ -12,8 +12,8 @@ class CounselingScheduleController extends Controller
     public function index()
     {
         $schedules = CounselingSchedule::with('student')
-                        ->orderByDesc('date')
-                        ->paginate(10);
+            ->orderByDesc('date')
+            ->paginate(10);
 
         return view('guru_bk.schedules.index', compact('schedules'));
     }
@@ -27,18 +27,21 @@ class CounselingScheduleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'student_id' => 'required|exists:students,id',
+            'nisn' => 'required|exists:students,nisn',
             'date' => 'required|date',
             'time' => 'required',
             'note' => 'nullable|string',
             'status' => 'required|string',
         ]);
 
-        CounselingSchedule::create($request->only([
-            'student_id', 'date', 'time', 'note', 'status'
-        ]));
+        CounselingSchedule::create([
+            'nisn' => $request->nisn,
+            'date' => $request->date,
+            'time' => $request->time,
+            'note' => $request->note,
+            'status' => $request->status,
+        ]);
 
-        // return redirect()->route('guru_bk.schedules.index')
         return redirect()->route('schedules.index')
             ->with('success', 'Jadwal berhasil ditambahkan.');
     }
@@ -52,7 +55,7 @@ class CounselingScheduleController extends Controller
     public function update(Request $request, CounselingSchedule $schedule)
     {
         $request->validate([
-            'student_id' => 'required|exists:students,id',
+            'nisn' => 'required|exists:students,nisn',
             'date' => 'required|date',
             'time' => 'required',
             'note' => 'nullable|string',
@@ -60,7 +63,11 @@ class CounselingScheduleController extends Controller
         ]);
 
         $schedule->update($request->only([
-            'student_id', 'date', 'time', 'note', 'status'
+            'nisn',
+            'date',
+            'time',
+            'note',
+            'status'
         ]));
 
         // return redirect()->route('guru_bk.schedules.index')

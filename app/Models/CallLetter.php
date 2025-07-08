@@ -12,6 +12,8 @@ class CallLetter extends Model
         'tanggal',
         'keperluan',
         'file',
+        'waktu_pertemuan',
+        'tempat_pertemuan',
     ];
 
     public function student()

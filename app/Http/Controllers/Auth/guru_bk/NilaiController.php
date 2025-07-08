@@ -8,31 +8,32 @@ use Illuminate\Support\Facades\DB;
 
 class NilaiController extends Controller
 {
-   public function index()
+    public function index()
     {
-        $query = DB::table('nilai')
-            ->join('students', 'nilai.nisn', '=', 'students.nisn')
-            ->select('nilai.*', 'students.name', 'students.class');
+        $query = DB::table('students')
+            ->leftJoin('nilai', 'students.nisn', '=', 'nilai.nisn')
+            ->select('nilai.*', 'students.name', 'students.class', 'students.nisn');
 
-        if (request('kategori')) {
-            $query->where('nilai.kategori', request('kategori'));
-        }
+        // Hapus filter kategori karena kolom nilai.kategori sudah tidak ada
+        // if (request()->filled('kategori')) {
+        //     $query->where('nilai.kategori', request('kategori'));
+        // }
 
-        if (request('kelas')) {
+        if (request()->filled('kelas')) {
             $query->where('students.class', request('kelas'));
         }
 
-        if (request('q')) {
+        if (request()->filled('q')) {
             $query->where(function ($q) {
                 $q->where('students.name', 'like', '%' . request('q') . '%')
-                ->orWhere('nilai.nisn', 'like', '%' . request('q') . '%');
+                    ->orWhere('students.nisn', 'like', '%' . request('q') . '%');
             });
         }
 
-        $data = $query->orderBy('nilai.kategori')
-                    ->orderByDesc('nilai.rata_rata')
-                    ->paginate(20)
-                    ->appends(request()->query());
+        // Hapus orderBy berdasarkan kategori
+        $data = $query->orderByDesc('nilai.rata_rata')
+            ->paginate(27)
+            ->appends(request()->query());
 
         $semuaKelas = DB::table('students')
             ->select('class')
@@ -43,13 +44,12 @@ class NilaiController extends Controller
         return view('guru_bk.nilai.index', compact('data', 'semuaKelas'));
     }
 
-
+    // edit
     public function edit($id)
     {
         $nilai = DB::table('nilai')->where('id', $id)->first();
         if (!$nilai) abort(404);
 
-        // Ambil data siswa berdasarkan nisn
         $siswa = DB::table('students')
             ->where('nisn', $nilai->nisn)
             ->select('name', 'class')
@@ -58,6 +58,7 @@ class NilaiController extends Controller
         return view('guru_bk.nilai.edit', compact('nilai', 'siswa'));
     }
 
+    // update
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -74,29 +75,39 @@ class NilaiController extends Controller
             'penjas' => 'required|numeric',
         ]);
 
+        $nilai = DB::table('nilai')->where('id', $id)->first();
+        if (!$nilai) {
+            return redirect()->route('nilai.index')->with('error', 'Data nilai tidak ditemukan.');
+        }
+
         $mapel = $request->only([
-            'bindo', 'bing', 'mat', 'ipa', 'ips', 'agama',
-            'ppkn', 'sosbud', 'tik', 'penjas'
+            'bindo',
+            'bing',
+            'mat',
+            'ipa',
+            'ips',
+            'agama',
+            'ppkn',
+            'sosbud',
+            'tik',
+            'penjas'
         ]);
 
         $jumlah = array_sum($mapel);
-        $rata = $jumlah / count($mapel);
+        $rata = round($jumlah / count($mapel), 2);
 
-        if ($rata >= 85) {
-            $kategori = 'Baik';
-        } elseif ($rata >= 75) {
-            $kategori = 'Cukup';
-        } else {
-            $kategori = 'Butuh Bimbingan';
-        }
+        $kategori = match (true) {
+            $rata >= 85 => 'Baik',
+            $rata >= 75 => 'Cukup',
+            default     => 'Butuh Bimbingan'
+        };
 
         $data = array_merge(
             ['nisn' => $request->nisn],
             $mapel,
             [
                 'jumlah_nilai' => $jumlah,
-                'rata_rata' => $rata,
-                'kategori' => $kategori,
+                'rata_rata'    => $rata,
             ]
         );
 
@@ -107,6 +118,11 @@ class NilaiController extends Controller
 
     public function destroy($id)
     {
+        $nilai = DB::table('nilai')->where('id', $id)->first();
+        if (!$nilai) {
+            return redirect()->route('nilai.index')->with('error', 'Data nilai tidak ditemukan.');
+        }
+
         DB::table('nilai')->where('id', $id)->delete();
 
         return redirect()->route('nilai.index')->with('success', 'Data nilai berhasil dihapus.');

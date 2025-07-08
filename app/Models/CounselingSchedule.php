@@ -7,14 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class CounselingSchedule extends Model
 {
     protected $fillable = [
-        'student_id',
+        'nisn',
         'date',
         'time',
         'note',
         'status',
     ];
+
     public function student()
     {
-        return $this->belongsTo(\App\Models\Student::class);
+        return $this->belongsTo(Student::class, 'nisn', 'nisn');
     }
 }

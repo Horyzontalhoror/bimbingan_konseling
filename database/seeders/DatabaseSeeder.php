@@ -25,6 +25,10 @@ class DatabaseSeeder extends Seeder
             NilaiSeeder::class,
             ParentLoginSeeder::class,
             StudentLoginSeeder::class,
+            JenisPelanggaranSeeder::class,
+            ViolationSeeder::class,
+            AbsensiSeeder::class,
+            KonfigurasiAbsensiSeeder::class,
         ]);
     }
 }
