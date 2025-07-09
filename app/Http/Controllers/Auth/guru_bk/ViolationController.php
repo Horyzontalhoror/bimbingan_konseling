@@ -16,12 +16,10 @@ class ViolationController extends Controller
      */
     public function index()
     {
-        // Ambil semua data pelanggaran dengan relasi student dan jenis pelanggaran
         $violations = Violation::with(['student', 'jenis'])
             ->orderByDesc('date')
             ->get();
 
-        // Hitung siswa dengan poin pelanggaran tertinggi
         $poinTertinggi = DB::table('violations')
             ->join('students', 'violations.nisn', '=', 'students.nisn')
             ->join('jenis_pelanggaran', 'violations.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
@@ -33,14 +31,11 @@ class ViolationController extends Controller
         return view('guru_bk.violations.index', compact('violations', 'poinTertinggi'));
     }
 
-
-
     /**
      * Menampilkan form untuk membuat pelanggaran baru.
      */
     public function create()
     {
-        // Tidak ada perubahan, sudah bagus.
         $students = Student::orderBy('name')->get();
         $jenisPelanggaran = JenisPelanggaran::orderBy('nama')->get();
 
@@ -52,7 +47,6 @@ class ViolationController extends Controller
      */
     public function store(Request $request)
     {
-        // Menggunakan hasil validasi untuk membuat data (lebih aman dan bersih)
         $validatedData = $request->validate([
             'student_id' => 'required|exists:students,id',
             'jenis_pelanggaran_id' => 'required|exists:jenis_pelanggaran,id',
@@ -61,7 +55,14 @@ class ViolationController extends Controller
             'action' => 'nullable|string|max:255',
         ]);
 
-        Violation::create($validatedData);
+        $student = Student::findOrFail($request->student_id);
+
+        Violation::create(array_merge($validatedData, [
+            'nisn' => $student->nisn,
+        ]));
+
+        // Tandai agar diprediksi ulang
+        $student->update(['is_predicted' => false]);
 
         return redirect()->route('violations.index')
             ->with('success', 'Catatan pelanggaran berhasil ditambahkan.');
@@ -72,8 +73,6 @@ class ViolationController extends Controller
      */
     public function edit(Violation $violation)
     {
-        // Tidak ada perubahan, sudah menggunakan route-model binding dengan baik.
-        // Relasi sudah di-load otomatis oleh Laravel.
         $students = Student::orderBy('name')->get();
         $jenisPelanggaran = JenisPelanggaran::orderBy('nama')->get();
 
@@ -95,18 +94,23 @@ class ViolationController extends Controller
 
         $violation->update($validatedData);
 
+        // Tandai siswa agar diprediksi ulang
+        Student::where('nisn', $request->nisn)->update(['is_predicted' => false]);
+
         return redirect()->route('violations.index')
             ->with('success', 'Data pelanggaran berhasil diperbarui.');
     }
-
 
     /**
      * Menghapus data pelanggaran dari database.
      */
     public function destroy(Violation $violation)
     {
-        // Tidak ada perubahan, sudah bagus.
+        $nisn = $violation->nisn;
         $violation->delete();
+
+        // Tandai siswa agar diprediksi ulang
+        Student::where('nisn', $nisn)->update(['is_predicted' => false]);
 
         return redirect()->route('violations.index')
             ->with('success', 'Data pelanggaran berhasil dihapus.');

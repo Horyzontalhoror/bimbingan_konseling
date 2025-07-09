@@ -26,15 +26,14 @@
             @csrf
 
             <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
-                <li class="nav-item"><a class="nav-link active" id="siswa-tab" data-toggle="tab" href="#siswa">Data
-                        Siswa</a></li>
+                <li class="nav-item"><a class="nav-link active" id="siswa-tab" data-toggle="tab" href="#siswa">Data Siswa</a></li>
                 <li class="nav-item"><a class="nav-link" id="nilai-tab" data-toggle="tab" href="#nilai">Nilai</a></li>
                 <li class="nav-item"><a class="nav-link" id="absensi-tab" data-toggle="tab" href="#absensi">Absensi</a></li>
-                <li class="nav-item"><a class="nav-link" id="pelanggaran-tab" data-toggle="tab"
-                        href="#pelanggaran">Pelanggaran</a></li>
+                <li class="nav-item"><a class="nav-link" id="pelanggaran-tab" data-toggle="tab" href="#pelanggaran">Pelanggaran</a></li>
             </ul>
 
             <div class="tab-content" id="myTabContent">
+
                 <!-- Tab Data Siswa -->
                 <div class="tab-pane fade show active" id="siswa" role="tabpanel">
                     <div class="form-group">
@@ -47,7 +46,13 @@
                     </div>
                     <div class="form-group">
                         <label>Kelas</label>
-                        <input type="text" name="class" class="form-control" required>
+                        <select name="class" class="form-control" required>
+                            <option value="" selected disabled>Pilih Kelas</option>
+                            <option value="VIII-A">VIII-A</option>
+                            <option value="VIII-B">VIII-B</option>
+                            <option value="VIII-C">VIII-C</option>
+                            <option value="VIII-D">VIII-D</option>
+                        </select>
                     </div>
                 </div>
 
@@ -55,22 +60,21 @@
                 <div class="tab-pane fade" id="nilai" role="tabpanel">
                     <div class="row">
                         @foreach ([
-            'bindo' => 'B. Indonesia',
-            'bing' => 'B. Inggris',
-            'mat' => 'Matematika',
-            'ipa' => 'IPA',
-            'ips' => 'IPS',
-            'agama' => 'Agama',
-            'ppkn' => 'PPKn',
-            'sosbud' => 'Sosbud',
-            'tik' => 'TIK',
-            'penjas' => 'Penjas',
-        ] as $key => $label)
+                            'bindo' => 'B. Indonesia',
+                            'bing' => 'B. Inggris',
+                            'mat' => 'Matematika',
+                            'ipa' => 'IPA',
+                            'ips' => 'IPS',
+                            'agama' => 'Agama',
+                            'ppkn' => 'PPKn',
+                            'sosbud' => 'Sosbud',
+                            'tik' => 'TIK',
+                            'penjas' => 'Penjas',
+                        ] as $key => $label)
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>{{ $label }}</label>
-                                    <input type="number" name="nilai[{{ $key }}]" class="form-control"
-                                        min="0" max="100" value="0" required>
+                                    <input type="number" name="nilai[{{ $key }}]" class="form-control" min="0" max="100" value="0" required>
                                 </div>
                             </div>
                         @endforeach
@@ -81,17 +85,16 @@
                 <div class="tab-pane fade" id="absensi" role="tabpanel">
                     <div class="row">
                         @foreach ([
-            'hadir' => 'Hadir',
-            'sakit' => 'Sakit',
-            'izin' => 'Izin',
-            'alpa' => 'Alpa',
-            'bolos' => 'Bolos',
-        ] as $key => $label)
+                            'hadir' => 'Hadir',
+                            'sakit' => 'Sakit',
+                            'izin' => 'Izin',
+                            'alpa' => 'Alpa',
+                            'bolos' => 'Bolos',
+                        ] as $key => $label)
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>{{ $label }}</label>
-                                    <input type="number" name="absensi[{{ $key }}]" class="form-control"
-                                        min="0" value="0" required>
+                                    <input type="number" name="absensi[{{ $key }}]" class="form-control" min="0" value="0" required>
                                 </div>
                             </div>
                         @endforeach
@@ -105,9 +108,9 @@
                             <div class="form-group">
                                 <label>Jenis Pelanggaran</label>
                                 <select name="pelanggaran[][jenis_id]" class="form-control select2">
+                                    <option value="0" selected disabled>Pilih Jenis Pelanggaran</option>
                                     @foreach ($jenisPelanggaran as $jenis)
-                                        <option value="{{ $jenis->id }}">{{ $jenis->nama }} ({{ $jenis->poin }} poin)
-                                        </option>
+                                        <option value="{{ $jenis->id }}">{{ $jenis->nama }} ({{ $jenis->poin }} poin)</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -133,50 +136,43 @@
         </form>
     </div>
 @endsection
----
+
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Inisialisasi Select2 untuk elemen yang sudah ada
             $('.select2').select2();
 
-            // Fungsi untuk mengupdate indeks name atribut
             function updatePelanggaranIndices() {
                 $('#pelanggaran-wrapper .pelanggaran-group').each(function(index) {
                     $(this).find('[name^="pelanggaran"]').each(function() {
                         const originalName = $(this).attr('name');
-                        // Ganti 'pelanggaran[]' dengan 'pelanggaran[indeks_baru]'
-                        const newName = originalName.replace(/pelanggaran\[\]/,
-                            `pelanggaran[${index}]`);
+                        const newName = originalName.replace(/pelanggaran\[\]/, `pelanggaran[${index}]`);
                         $(this).attr('name', newName);
                     });
                 });
             }
 
-            // Panggil saat halaman dimuat untuk elemen pertama (jika ada default)
             updatePelanggaranIndices();
 
             $('#add-pelanggaran').click(function() {
-                let clone = $('.pelanggaran-group').first().clone(); // Kloning elemen pertama
-                clone.find('input, textarea').val(''); // Kosongkan nilai input
-                // Reset select2 pada kloningan
-                clone.find('select.select2').val(clone.find('select.select2 option:first').val()).trigger(
-                    'change');
-
+                let clone = $('.pelanggaran-group').first().clone();
+                clone.find('input, textarea').val('');
+                clone.find('select.select2').val(clone.find('select.select2 option:first').val()).trigger('change');
                 $('#pelanggaran-wrapper').append(clone);
-                clone.find('.select2').select2(); // Inisialisasi Select2 untuk kloningan baru
-                updatePelanggaranIndices(); // Perbarui semua indeks setelah penambahan
+                clone.find('.select2').select2();
+                updatePelanggaranIndices();
             });
 
             $(document).on('click', '.remove', function() {
                 if ($('.pelanggaran-group').length > 1) {
                     $(this).closest('.pelanggaran-group').remove();
-                    updatePelanggaranIndices(); // Perbarui semua indeks setelah penghapusan
+                    updatePelanggaranIndices();
                 }
             });
         });
     </script>
+
     @if ($errors->any())
         <script>
             $(document).ready(function() {

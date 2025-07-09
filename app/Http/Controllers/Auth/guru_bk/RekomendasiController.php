@@ -4,21 +4,18 @@ namespace App\Http\Controllers\Auth\guru_bk;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-// use Illuminate\Pagination\LengthAwarePaginator; // Tidak diperlukan lagi
-// use Illuminate\Support\Collection; // Tidak diperlukan lagi
 
 class RekomendasiController extends Controller
 {
-    /**
-     * Menampilkan perbandingan rekomendasi siswa berdasarkan hasil K-Means.
-     * Menggabungkan data siswa dengan hasil clustering dari berbagai metode K-Means
-     * (Nilai, Absen, Pelanggaran) dan keputusan akhir.
-     *
-     * @return \Illuminate\View\View
-     */
     public function perbandingan()
     {
-        $data = DB::table('students')
+        // Ambil siswa yang memiliki data KMeans
+        $kmeans = DB::table('students')
+            ->join(DB::raw("(
+                SELECT DISTINCT nisn FROM rekomendasi_siswa
+                WHERE metode IN ('KMeans-Nilai', 'KMeans-Absen', 'KMeans-Pelanggaran')
+            ) as filtered"), 'students.nisn', '=', 'filtered.nisn')
+
             ->leftJoin('rekomendasi_siswa as nilai', function ($q) {
                 $q->on('students.nisn', '=', 'nilai.nisn')
                     ->where('nilai.metode', '=', 'KMeans-Nilai');
@@ -39,21 +36,47 @@ class RekomendasiController extends Controller
                 'students.name',
                 'students.nisn',
                 'students.class',
-                DB::raw('COALESCE(nilai.kategori, "-") as nilai'),
-                DB::raw('COALESCE(absen.kategori, "-") as absen'),
-                DB::raw('COALESCE(pelanggaran.kategori, "-") as pelanggaran'),
+                DB::raw('COALESCE(nilai.kategori, "-") as nilai_kmeans'),
+                DB::raw('COALESCE(absen.kategori, "-") as absen_kmeans'),
+                DB::raw('COALESCE(pelanggaran.kategori, "-") as pelanggaran_kmeans'),
                 DB::raw('COALESCE(final.kategori, "-") as final')
             )
-            ->orderByRaw("
-                FIELD(nilai.kategori, 'Butuh Bimbingan', 'Cukup', 'Baik'),
-                FIELD(absen.kategori, 'Sering Absen', 'Cukup', 'Rajin'),
-                FIELD(pelanggaran.kategori, 'Sering', 'Ringan', 'Tidak Pernah')
-            ")
-            ->get(); // Ambil semua data
+            ->orderBy('students.name')
+            ->get();
 
-        // Tidak ada lagi paginasi manual di sini.
-        // DataTables akan menangani paginasi di sisi klien.
+        // Ambil siswa yang memiliki data KNN
+        $knn = DB::table('students')
+            ->join(DB::raw("(
+                SELECT DISTINCT nisn FROM rekomendasi_siswa
+                WHERE metode IN ('KNN-Nilai', 'KNN-Absen', 'KNN-Pelanggaran')
+            ) as filtered"), 'students.nisn', '=', 'filtered.nisn')
 
-        return view('guru_bk.rekomendasi.perbandingan', ['siswa' => $data]);
+            ->leftJoin('rekomendasi_siswa as nilai', function ($q) {
+                $q->on('students.nisn', '=', 'nilai.nisn')
+                    ->where('nilai.metode', '=', 'KNN-Nilai');
+            })
+            ->leftJoin('rekomendasi_siswa as absen', function ($q) {
+                $q->on('students.nisn', '=', 'absen.nisn')
+                    ->where('absen.metode', '=', 'KNN-Absen');
+            })
+            ->leftJoin('rekomendasi_siswa as pelanggaran', function ($q) {
+                $q->on('students.nisn', '=', 'pelanggaran.nisn')
+                    ->where('pelanggaran.metode', '=', 'KNN-Pelanggaran');
+            })
+            ->select(
+                'students.name',
+                'students.nisn',
+                'students.class',
+                DB::raw('COALESCE(nilai.kategori, "-") as nilai_knn'),
+                DB::raw('COALESCE(absen.kategori, "-") as absen_knn'),
+                DB::raw('COALESCE(pelanggaran.kategori, "-") as pelanggaran_knn')
+            )
+            ->orderBy('students.name')
+            ->get();
+
+        return view('guru_bk.rekomendasi.perbandingan', [
+            'kmeans' => $kmeans,
+            'knn' => $knn
+        ]);
     }
 }

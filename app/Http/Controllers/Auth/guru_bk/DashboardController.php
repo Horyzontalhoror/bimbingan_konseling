@@ -9,25 +9,48 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Ambil input filter
         $kategori = request()->input('kategori');
         $kelas = request()->input('kelas');
         $search = trim(request()->input('q'));
 
-        // Data siswa dengan join rekomendasi final
         $query = DB::table('students')
-            ->leftJoin('rekomendasi_siswa as nilai', function ($q) {
-                $q->on('students.nisn', '=', 'nilai.nisn')->where('nilai.metode', '=', 'KMeans-Nilai');
-            })
-            ->leftJoin('rekomendasi_siswa as absen', function ($q) {
-                $q->on('students.nisn', '=', 'absen.nisn')->where('absen.metode', '=', 'KMeans-Absen');
-            })
-            ->leftJoin('rekomendasi_siswa as pelanggaran', function ($q) {
-                $q->on('students.nisn', '=', 'pelanggaran.nisn')->where('pelanggaran.metode', '=', 'KMeans-Pelanggaran');
-            })
+            ->leftJoin(DB::raw("(
+            SELECT nisn, kategori FROM (
+                SELECT *, ROW_NUMBER() OVER (
+                    PARTITION BY nisn ORDER BY FIELD(metode, 'KNN-Nilai', 'KMeans-Nilai')
+                ) AS rn
+                FROM rekomendasi_siswa
+                WHERE metode IN ('KNN-Nilai', 'KMeans-Nilai')
+            ) AS ranked_nilai
+            WHERE rn = 1
+        ) as nilai"), 'students.nisn', '=', 'nilai.nisn')
+
+            ->leftJoin(DB::raw("(
+            SELECT nisn, kategori FROM (
+                SELECT *, ROW_NUMBER() OVER (
+                    PARTITION BY nisn ORDER BY FIELD(metode, 'KNN-Absen', 'KMeans-Absen')
+                ) AS rn
+                FROM rekomendasi_siswa
+                WHERE metode IN ('KNN-Absen', 'KMeans-Absen')
+            ) AS ranked_absen
+            WHERE rn = 1
+        ) as absen"), 'students.nisn', '=', 'absen.nisn')
+
+            ->leftJoin(DB::raw("(
+            SELECT nisn, kategori FROM (
+                SELECT *, ROW_NUMBER() OVER (
+                    PARTITION BY nisn ORDER BY FIELD(metode, 'KNN-Pelanggaran', 'KMeans-Pelanggaran')
+                ) AS rn
+                FROM rekomendasi_siswa
+                WHERE metode IN ('KNN-Pelanggaran', 'KMeans-Pelanggaran')
+            ) AS ranked_pelanggaran
+            WHERE rn = 1
+        ) as pelanggaran"), 'students.nisn', '=', 'pelanggaran.nisn')
+
             ->leftJoin('rekomendasi_siswa as final', function ($q) {
                 $q->on('students.nisn', '=', 'final.nisn')->where('final.metode', '=', 'Final');
             })
+
             ->select(
                 'students.name',
                 'students.nisn',
@@ -38,7 +61,6 @@ class DashboardController extends Controller
                 DB::raw('COALESCE(final.kategori, "-") as final')
             );
 
-        // Filter
         if ($kategori) {
             $query->where('final.kategori', $kategori);
         }
@@ -54,52 +76,47 @@ class DashboardController extends Controller
             });
         }
 
-        // Order
         $query->orderByRaw("
-            FIELD(
-                CONCAT_WS('-', nilai.kategori, absen.kategori, pelanggaran.kategori),
-                'Butuh Bimbingan-Sering Absen-Sering',
-                'Butuh Bimbingan-Sering Absen-Ringan',
-                'Butuh Bimbingan-Sering Absen-Tidak Pernah',
-                'Butuh Bimbingan-Cukup-Sering',
-                'Butuh Bimbingan-Cukup-Ringan',
-                'Butuh Bimbingan-Cukup-Tidak Pernah',
-                'Butuh Bimbingan-Rajin-Sering',
-                'Butuh Bimbingan-Rajin-Ringan',
-                'Butuh Bimbingan-Rajin-Tidak Pernah',
-                'Cukup-Sering Absen-Sering',
-                'Cukup-Sering Absen-Ringan',
-                'Cukup-Sering Absen-Tidak Pernah',
-                'Cukup-Cukup-Sering',
-                'Cukup-Cukup-Ringan',
-                'Cukup-Cukup-Tidak Pernah',
-                'Cukup-Rajin-Sering',
-                'Cukup-Rajin-Ringan',
-                'Cukup-Rajin-Tidak Pernah',
-                'Baik-Sering Absen-Sering',
-                'Baik-Sering Absen-Ringan',
-                'Baik-Sering Absen-Tidak Pernah',
-                'Baik-Cukup-Sering',
-                'Baik-Cukup-Ringan',
-                'Baik-Cukup-Tidak Pernah',
-                'Baik-Rajin-Sering',
-                'Baik-Rajin-Ringan',
-                'Baik-Rajin-Tidak Pernah'
-            )
-        ");
+        FIELD(
+            CONCAT_WS('-', nilai.kategori, absen.kategori, pelanggaran.kategori),
+            'Butuh Bimbingan-Sering Absen-Sering',
+            'Butuh Bimbingan-Sering Absen-Ringan',
+            'Butuh Bimbingan-Sering Absen-Tidak Pernah',
+            'Butuh Bimbingan-Cukup-Sering',
+            'Butuh Bimbingan-Cukup-Ringan',
+            'Butuh Bimbingan-Cukup-Tidak Pernah',
+            'Butuh Bimbingan-Rajin-Sering',
+            'Butuh Bimbingan-Rajin-Ringan',
+            'Butuh Bimbingan-Rajin-Tidak Pernah',
+            'Cukup-Sering Absen-Sering',
+            'Cukup-Sering Absen-Ringan',
+            'Cukup-Sering Absen-Tidak Pernah',
+            'Cukup-Cukup-Sering',
+            'Cukup-Cukup-Ringan',
+            'Cukup-Cukup-Tidak Pernah',
+            'Cukup-Rajin-Sering',
+            'Cukup-Rajin-Ringan',
+            'Cukup-Rajin-Tidak Pernah',
+            'Baik-Sering Absen-Sering',
+            'Baik-Sering Absen-Ringan',
+            'Baik-Sering Absen-Tidak Pernah',
+            'Baik-Cukup-Sering',
+            'Baik-Cukup-Ringan',
+            'Baik-Cukup-Tidak Pernah',
+            'Baik-Rajin-Sering',
+            'Baik-Rajin-Ringan',
+            'Baik-Rajin-Tidak Pernah'
+        )
+    ");
 
-        // Ambil data paginasi
         $siswa = $query->paginate(20)->appends(request()->query());
 
-
-        // Ambil semua kelas unik
         $semuaKelas = DB::table('students')
             ->select('class')
             ->distinct()
             ->orderBy('class')
             ->pluck('class');
 
-        // Statistik berdasarkan kategori final
         $statistik = DB::table('rekomendasi_siswa')
             ->where('metode', 'Final')
             ->select('kategori', DB::raw('COUNT(*) as total'))

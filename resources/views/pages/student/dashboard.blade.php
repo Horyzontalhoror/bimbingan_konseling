@@ -3,62 +3,46 @@
 @section('title', 'Dashboard Siswa')
 
 @section('content')
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <h1 class="h4">Selamat Datang, {{ Auth::guard('student')->user()->student->name ?? 'Siswa' }}</h1>
-        <p class="text-muted">Berikut adalah ringkasan status akademik dan konseling kamu.</p>
-    </div>
-</div>
+    <div class="row justify-content-center"> {{-- Menggunakan grid Bootstrap untuk layout --}}
+        <div class="col-lg-10 col-xl-8 dashboard-container"> {{-- Menyesuaikan lebar konten --}}
 
-<div class="row">
-    <!-- Kategori -->
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="text-xs font-weight-bold text-uppercase mb-1">Kategori</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                    {{ Auth::guard('student')->user()->student->nilai->kategori ?? 'Belum tersedia' }}
+            {{-- Header Halaman --}}
+            <div class="header-section animate-fade-in-down">
+                <h1 class="header-title">
+                    <i class="fas fa-tachometer-alt header-icon animate-bounce-icon"></i>
+                    Selamat Datang, <span
+                        class="user-name">{{ Auth::guard('student')->user()->student->name ?? 'Siswa' }}</span>
+                </h1>
+            </div>
+
+            {{-- Welcome Card for Students --}}
+            <div class="welcome-card-student animate-fade-in">
+                {{-- Decorative shapes --}}
+                <div class="decorative-shape-1"></div>
+                <div class="decorative-shape-2"></div>
+
+                <div class="position-relative z-1"> {{-- Konten di atas shape dekoratif --}}
+                    <p class="student-welcome-text">
+                        <span style="font-size: 1.5rem; margin-right: 0.5rem;">🌟</span> "Langkah Awal Menuju Masa Depan
+                        Cerah Dimulai di Sini!"
+                    </p>
+                    <p class="student-welcome-text">
+                        <span style="font-size: 1.5rem; margin-right: 0.5rem;">💡</span> "Dapatkan informasi akademik,
+                        kegiatan sekolah, jadwal penting, dan lainnya secara lengkap dan terpercaya."
+                    </p>
+                    <blockquote class="student-quote-block">
+                        <p>
+                            "Pendidikan adalah senjata paling ampuh yang bisa kamu gunakan untuk mengubah dunia."
+                            <br>– Nelson Mandela
+                        </p>
+                    </blockquote>
                 </div>
             </div>
+
+            {{-- Anda bisa menambahkan bagian lain di sini jika diperlukan,
+                 misalnya daftar pengumuman, jadwal, nilai, dll.,
+                 dengan gaya card SB Admin 2. --}}
+
         </div>
     </div>
-
-    <!-- Rata-rata -->
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="text-xs font-weight-bold text-uppercase mb-1">Rata-Rata Nilai</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                    {{ Auth::guard('student')->user()->student->nilai->rata_rata ?? '-' }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kelas -->
-    <div class="col-md-4 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="text-xs font-weight-bold text-uppercase mb-1">Kelas</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                    {{ Auth::guard('student')->user()->student->class ?? '-' }}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Jadwal Konseling (opsional, jika ada data) -->
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow">
-            <div class="card-header font-weight-bold">Jadwal Konseling</div>
-            <div class="card-body">
-                <p>Belum ada jadwal konseling yang terdaftar.</p>
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection

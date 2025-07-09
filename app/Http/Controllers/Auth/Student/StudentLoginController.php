@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+
 class StudentLoginController extends Controller
 {
     public function showLoginForm()
@@ -37,4 +38,5 @@ class StudentLoginController extends Controller
         $request->session()->regenerateToken();
         return redirect('/');
     }
+
 }

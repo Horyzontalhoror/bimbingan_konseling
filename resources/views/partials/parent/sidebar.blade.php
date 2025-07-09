@@ -1,6 +1,6 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('parent.dashboard') }}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('parent.index') }}">
         <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-user-shield"></i>
         </div>
@@ -10,8 +10,16 @@
     <hr class="sidebar-divider my-0">
 
     <!-- Dashboard -->
-    <li class="nav-item">
+    {{-- <li class="nav-item">
         <a class="nav-link" href="{{ route('parent.dashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+    </li> --}}
+
+    <!-- Dashboard -->
+    <li class="nav-item">
+        <a class="nav-link" href="{{ route('parent.index') }}">
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
@@ -19,7 +27,7 @@
 
     <!-- Nilai Anak -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('parent.nilai') }}">
             <i class="fas fa-fw fa-chart-line"></i>
             <span>Nilai Anak</span>
         </a>
@@ -27,7 +35,7 @@
 
     <!-- Jadwal Konseling -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('parent.konseling') }}">
             <i class="fas fa-fw fa-calendar-alt"></i>
             <span>Jadwal Konseling</span>
         </a>
@@ -35,7 +43,7 @@
 
     <!-- Surat Panggilan -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('parent.panggilan') }}">
             <i class="fas fa-fw fa-envelope-open-text"></i>
             <span>Surat Panggilan</span>
         </a>

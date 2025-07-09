@@ -6,6 +6,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class StudentLogin extends Authenticatable
 {
+    protected $table = 'student_logins';
+
     protected $fillable = ['nisn', 'password'];
 
     public function student()
@@ -13,4 +15,3 @@ class StudentLogin extends Authenticatable
         return $this->hasOne(Student::class, 'nisn', 'nisn');
     }
 }
-

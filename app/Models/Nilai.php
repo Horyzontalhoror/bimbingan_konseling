@@ -32,4 +32,10 @@ class Nilai extends Model
         return $this->belongsTo(Student::class, 'nisn', 'nisn');
     }
 
+     // Relasi ke StudentLogin berdasarkan nisn
+    public function studentLogin()
+    {
+        return $this->belongsTo(StudentLogin::class, 'nisn', 'nisn');
+    }
+
 }

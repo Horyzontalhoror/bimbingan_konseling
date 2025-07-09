@@ -45,18 +45,27 @@
                 <canvas id="chartKategori" height="250"></canvas>
             </div>
 
-            <!-- KANAN -->
+            {{-- KANAN --}}
             <div class="col-md-4">
-                <div class="alert alert-info">
-                    <h1 class="h5">Proses Clustering KMeans</h1>
-                    <p class="text-muted">Mengelompokkan siswa berdasarkan kombinasi nilai, absen, dan pelanggaran.</p>
-                    <a href="{{ route('keputusanAkhir') }}" class="btn btn-sm btn-primary mb-3">Proses Clustering</a>
+                <div class="card shadow mb-4 h-100"> {{-- Menggunakan card untuk tampilan yang lebih baik, h-100 untuk tinggi penuh --}}
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
+                        {{-- Menggunakan flexbox untuk memusatkan konten --}}
+                        <h1 class="fas fa-chart-line me-2"> Prediksi K-NN</h1>
+                        <p class="text-muted mb-4">Proses ini akan menghasilkan prediksi kategori akhir siswa berdasarkan
+                            algoritma K-Nearest Neighbors (K-NN) dan mengintegrasikannya dengan hasil clustering K-Means.
+                        </p>
 
-                    <hr>
-
-                    <h1 class="h5">Prediksi K-NN</h1>
-                    <p class="text-muted">Menghasilkan prediksi kategori akhir berdasarkan tetangga terdekat.</p>
-                    <a href="{{ route('keputusanAkhirKNN') }}" class="btn btn-warning btn-sm mb-3">Jalankan Prediksi K-NN</a>
+                        {{-- Tombol Tentukan Keputusan Akhir K-Means --}}
+                        <form action="{{ route('keputusanAkhirKNN') }}" method="GET" class="w-100 mb-3">
+                            {{-- w-100 untuk lebar penuh --}}
+                            @csrf
+                            <button type="submit" class="btn btn-warning btn-icon-split btn-lg rounded-pill w-100"
+                                onsubmit="return confirm('Proses ini akan menentukan keputusan akhir berdasarkan hasil 3 clustering K-Means. Lanjutkan?')">
+                                <span class="icon text-white-50"><i class="fas fa-check-double"></i></span>
+                                <span class="text">KNN</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

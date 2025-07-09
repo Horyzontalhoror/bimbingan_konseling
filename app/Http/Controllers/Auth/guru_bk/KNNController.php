@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth\guru_bk;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KNNController extends Controller
 {
@@ -12,336 +12,215 @@ class KNNController extends Controller
     {
         $k = 3;
 
-        // --------- KNN NILAI ---------
+        // Ambil siswa yang perlu diprediksi ulang
+        $siswaBaru = DB::table('students')->where('is_predicted', false)->pluck('nisn');
+        if ($siswaBaru->isEmpty()) {
+            return back()->with('info', 'Tidak ada siswa yang perlu diproses ulang.');
+        }
+
+        // === KNN NILAI ===
         $fields = ['bindo', 'bing', 'mat', 'ipa', 'ips', 'agama', 'ppkn', 'sosbud', 'tik', 'penjas'];
-        $trainingNilai = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Nilai')->get();
-        $testingNilai = DB::table('nilai')
-            ->whereNotIn('nisn', $trainingNilai->pluck('nisn'))
+        $trainNilai = DB::table('rekomendasi_siswa')->where('metode', 'KMeans-Nilai')->get();
+        $nilaiTrain = DB::table('nilai')->whereIn('nisn', $trainNilai->pluck('nisn'))->get()->keyBy('nisn');
+        $testNilai = DB::table('nilai')->whereIn('nisn', $siswaBaru)->get();
+
+        foreach ($testNilai as $siswa) {
+            $vectorTest = collect($fields)->map(fn($f) => ($siswa->$f ?? 0) / 100)->toArray();
+
+            $distances = $trainNilai->map(function ($row) use ($nilaiTrain, $vectorTest, $fields) {
+                $data = $nilaiTrain[$row->nisn] ?? null;
+                if (!$data) return null;
+
+                $vectorTrain = collect($fields)->map(fn($f) => ($data->$f ?? 0) / 100)->toArray();
+                return [
+                    'kategori' => $row->kategori,
+                    'jarak' => $this->euclideanDistance($vectorTrain, $vectorTest)
+                ];
+            })->filter();
+
+            $kategori = $distances->sortBy('jarak')->take($k)->groupBy('kategori')->map->count()->sortDesc()->keys()->first();
+
+            if ($kategori) {
+                DB::table('rekomendasi_siswa')->updateOrInsert([
+                    'nisn' => $siswa->nisn,
+                    'metode' => 'KNN-Nilai',
+                ], [
+                    'kategori' => $kategori,
+                    'sumber' => 'knn',
+                    'keterangan' => 'Diklasifikasi dari siswa KMeans-Nilai.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        // === KNN ABSEN ===
+        $trainAbsen = DB::table('rekomendasi_siswa')->where('metode', 'KMeans-Absen')->get();
+        $absenTrain = DB::table('absensi')
+            ->select('nisn', DB::raw('SUM(alpa + bolos) as jumlah'))
+            ->whereIn('nisn', $trainAbsen->pluck('nisn'))
+            ->groupBy('nisn')
             ->get();
 
-        foreach ($testingNilai as $siswa) {
-            $vectorBaru = collect($fields)->map(fn($f) => ($siswa->$f ?? 0) / 100)->toArray();
+        $testAbsen = DB::table('absensi')
+            ->select('nisn', DB::raw('SUM(alpa + bolos) as jumlah'))
+            ->whereIn('nisn', $siswaBaru)
+            ->groupBy('nisn')
+            ->get();
 
-            $distances = $trainingNilai->map(function ($train) use ($fields, $vectorBaru) {
-                $nilaiTrain = DB::table('nilai')->where('nisn', $train->nisn)->first();
-                $vectorTrain = collect($fields)->map(fn($f) => ($nilaiTrain->$f ?? 0) / 100)->toArray();
+        foreach ($testAbsen as $siswa) {
+            $distances = $absenTrain->map(function ($train) use ($siswa, $trainAbsen) {
+                $kategori = $trainAbsen->firstWhere('nisn', $train->nisn)->kategori ?? null;
                 return [
-                    'kategori' => $train->kategori,
-                    'jarak' => $this->euclideanDistance($vectorTrain, $vectorBaru)
+                    'kategori' => $kategori,
+                    'jarak' => abs($train->jumlah - $siswa->jumlah)
                 ];
             });
 
             $kategori = $distances->sortBy('jarak')->take($k)->groupBy('kategori')->map->count()->sortDesc()->keys()->first();
 
-            DB::table('rekomendasi_siswa')->updateOrInsert([
-                'nisn' => $siswa->nisn,
-                'metode' => 'KNN-Nilai',
-            ], [
-                'kategori' => $kategori,
-                'sumber' => 'knn',
-                'keterangan' => 'Kategori nilai diprediksi dengan KNN.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // --------- KNN ABSEN ---------
-        $trainingAbsen = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Absen')->pluck('nisn');
-        $dataTrainAbsen = DB::table('absensi')
-            ->select('nisn', DB::raw('SUM(alpa + bolos) as jumlah'))
-            ->whereIn('nisn', $trainingAbsen)
-            ->groupBy('nisn')
-            ->get();
-
-        $allNisn = DB::table('nilai')->pluck('nisn');
-        $testingAbsen = $allNisn->diff($trainingAbsen);
-        $dataTestAbsen = DB::table('absensi')
-            ->select('nisn', DB::raw('SUM(alpa + bolos) as jumlah'))
-            ->whereIn('nisn', $testingAbsen)
-            ->groupBy('nisn')
-            ->get();
-
-        foreach ($dataTestAbsen as $test) {
-            $jarak = $dataTrainAbsen->map(function ($train) use ($test) {
-                $kategori = DB::table('rekomendasi_siswa')
-                    ->where('nisn', $train->nisn)
-                    ->where('metode', 'KNN-Absen')
-                    ->value('kategori');
-
-                return [
-                    'nisn' => $train->nisn,
-                    'jarak' => abs($train->jumlah - $test->jumlah),
+            if ($kategori) {
+                DB::table('rekomendasi_siswa')->updateOrInsert([
+                    'nisn' => $siswa->nisn,
+                    'metode' => 'KNN-Absen',
+                ], [
                     'kategori' => $kategori,
-                ];
-            });
-
-            $kategori = $jarak->sortBy('jarak')->take($k)->groupBy('kategori')->map->count()->sortDesc()->keys()->first();
-
-            DB::table('rekomendasi_siswa')->updateOrInsert([
-                'nisn' => $test->nisn,
-                'metode' => 'KNN-Absen',
-            ], [
-                'kategori' => $kategori,
-                'sumber' => 'knn',
-                'keterangan' => 'Kategori absen diprediksi dengan KNN.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                    'sumber' => 'knn',
+                    'keterangan' => 'Diklasifikasi dari siswa KMeans-Absen.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
-        // --------- KNN PELANGGARAN ---------
-        $trainingPel = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Pelanggaran')->pluck('nisn');
-        $dataTrainPel = DB::table('violations')
-            ->join('students', 'students.id', '=', 'violations.student_id')
-            ->select('students.nisn', DB::raw('COUNT(*) as jumlah'))
-            ->whereIn('students.nisn', $trainingPel)
+        // === KNN PELANGGARAN ===
+        $trainPel = DB::table('rekomendasi_siswa')->where('metode', 'KMeans-Pelanggaran')->get();
+        $pelTrain = DB::table('violations')
+            ->join('jenis_pelanggaran', 'jenis_pelanggaran.id', '=', 'violations.jenis_pelanggaran_id')
+            ->select('violations.nisn', DB::raw('SUM(jenis_pelanggaran.poin) as jumlah'))
+            ->whereIn('violations.nisn', $trainPel->pluck('nisn'))
+            ->groupBy('violations.nisn')
+            ->get();
+
+        $pelTest = DB::table('students')
+            ->leftJoin('violations', 'students.nisn', '=', 'violations.nisn')
+            ->leftJoin('jenis_pelanggaran', 'jenis_pelanggaran.id', '=', 'violations.jenis_pelanggaran_id')
+            ->select('students.nisn', DB::raw('COALESCE(SUM(jenis_pelanggaran.poin), 0) as jumlah'))
+            ->whereIn('students.nisn', $siswaBaru)
             ->groupBy('students.nisn')
             ->get();
 
-        $testingPel = $allNisn->diff($trainingPel);
-        $dataTestPel = DB::table('violations')
-            ->join('students', 'students.id', '=', 'violations.student_id')
-            ->select('students.nisn', DB::raw('COUNT(*) as jumlah'))
-            ->whereIn('students.nisn', $testingPel)
-            ->groupBy('students.nisn')
-            ->get();
+        foreach ($pelTest as $siswa) {
+            if ($siswa->jumlah == 0) {
+                // Kategorikan langsung sebagai 'Tidak Pernah'
+                DB::table('rekomendasi_siswa')->updateOrInsert([
+                    'nisn' => $siswa->nisn,
+                    'metode' => 'KNN-Pelanggaran',
+                ], [
+                    'kategori' => 'Tidak Pernah',
+                    'sumber' => 'manual',
+                    'keterangan' => 'Tidak memiliki data pelanggaran, dikategorikan sebagai Tidak Pernah.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                continue; // Skip KNN
+            }
 
-        foreach ($dataTestPel as $test) {
-            $jarak = $dataTrainPel->map(function ($train) use ($test) {
-                $kategori = DB::table('rekomendasi_siswa')
-                    ->where('nisn', $train->nisn)
-                    ->where('metode', 'KNN-Pelanggaran')
-                    ->value('kategori');
-
+            $distances = $pelTrain->map(function ($train) use ($siswa, $trainPel) {
+                $kategori = $trainPel->firstWhere('nisn', $train->nisn)->kategori ?? null;
                 return [
-                    'nisn' => $train->nisn,
-                    'jarak' => abs($train->jumlah - $test->jumlah),
                     'kategori' => $kategori,
+                    'jarak' => abs($train->jumlah - $siswa->jumlah)
                 ];
             });
 
-            $kategori = $jarak->sortBy('jarak')->take($k)->groupBy('kategori')->map->count()->sortDesc()->keys()->first();
+            $kategori = $distances->sortBy('jarak')->take($k)->groupBy('kategori')->map->count()->sortDesc()->keys()->first();
 
-            DB::table('rekomendasi_siswa')->updateOrInsert([
-                'nisn' => $test->nisn,
-                'metode' => 'KNN-Pelanggaran',
-            ], [
-                'kategori' => $kategori,
-                'sumber' => 'knn',
-                'keterangan' => 'Kategori pelanggaran diprediksi dengan KNN.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            if ($kategori) {
+                DB::table('rekomendasi_siswa')->updateOrInsert([
+                    'nisn' => $siswa->nisn,
+                    'metode' => 'KNN-Pelanggaran',
+                ], [
+                    'kategori' => $kategori,
+                    'sumber' => 'knn',
+                    'keterangan' => 'Diklasifikasi dari siswa KMeans-Pelanggaran.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
-        return back()->with('success', 'Prediksi KNN selesai untuk semua aspek.');
+        // === FINAL DECISION BASED ON KNN ===
+        $finalData = DB::table('students')
+            ->leftJoin('rekomendasi_siswa as nilai', function ($q) {
+                $q->on('students.nisn', '=', 'nilai.nisn')->where('nilai.metode', 'KNN-Nilai');
+            })
+            ->leftJoin('rekomendasi_siswa as absen', function ($q) {
+                $q->on('students.nisn', '=', 'absen.nisn')->where('absen.metode', 'KNN-Absen');
+            })
+            ->leftJoin('rekomendasi_siswa as pel', function ($q) {
+                $q->on('students.nisn', '=', 'pel.nisn')->where('pel.metode', 'KNN-Pelanggaran');
+            })
+            ->whereIn('students.nisn', $siswaBaru)
+            ->select(
+                'students.nisn',
+                DB::raw('COALESCE(nilai.kategori, "-") as kategori_nilai'),
+                DB::raw('COALESCE(absen.kategori, "-") as kategori_absen'),
+                DB::raw('COALESCE(pel.kategori, "-") as kategori_pelanggaran')
+            )
+            ->get();
+
+        $recordsFinal = [];
+        $timestamp = now();
+
+        foreach ($finalData as $row) {
+            $nisn = $row->nisn;
+            $nilai = $row->kategori_nilai;
+            $absen = $row->kategori_absen;
+            $pel = $row->kategori_pelanggaran;
+
+            $final = 'Baik';
+
+            if ($nilai === 'Butuh Bimbingan' || $absen === 'Sering Absen' || $pel === 'Sering') {
+                $final = 'Butuh Bimbingan';
+            } elseif ($nilai === 'Cukup' || $absen === 'Cukup' || $pel === 'Ringan') {
+                $final = 'Cukup';
+            }
+
+            $recordsFinal[] = [
+                'nisn' => $nisn,
+                'metode' => 'Final',
+                'kategori' => $final,
+                'sumber' => 'knn',
+                'keterangan' => "Kategori akhir dari kombinasi (Nilai: $nilai, Absen: $absen, Pelanggaran: $pel)",
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp
+            ];
+        }
+
+        // FILTER DUPLIKASI SETELAH PENGISIAN
+        $recordsFinal = collect($recordsFinal)
+            ->unique(fn($item) => $item['nisn'] . '-' . $item['metode'])
+            ->values()
+            ->all();
+
+
+        if (!empty($recordsFinal)) {
+            DB::table('rekomendasi_siswa')->upsert(
+                $recordsFinal,
+                ['nisn', 'metode'],
+                ['kategori', 'sumber', 'keterangan', 'updated_at']
+            );
+        }
+
+        // Tandai siswa sudah diprediksi
+        DB::table('students')->whereIn('nisn', $siswaBaru)->update(['is_predicted' => true]);
+
+        return back()->with('success', 'Klasifikasi KNN selesai untuk siswa yang perlu diproses ulang.');
     }
-
 
     protected function euclideanDistance(array $a, array $b)
     {
         return sqrt(array_sum(array_map(fn($x, $y) => pow($x - $y, 2), $a, $b)));
-    }
-
-    // keputusan akhir knn
-    public function keputusanAkhirKNN()
-    {
-        // Ambil siswa yang sudah memiliki 3 hasil metode KNN
-        $siswaList = DB::table('rekomendasi_siswa')
-            ->select('nisn')
-            ->whereIn('metode', ['KNN-Nilai', 'KNN-Absen', 'KNN-Pelanggaran'])
-            ->groupBy('nisn')
-            ->havingRaw('COUNT(DISTINCT metode) = 3')
-            ->pluck('nisn');
-
-        foreach ($siswaList as $nisn) {
-            $kategoriNilai = DB::table('rekomendasi_siswa')
-                ->where('nisn', $nisn)
-                ->where('metode', 'KNN-Nilai')
-                ->value('kategori');
-
-            $kategoriAbsen = DB::table('rekomendasi_siswa')
-                ->where('nisn', $nisn)
-                ->where('metode', 'KNN-Absen')
-                ->value('kategori');
-
-            $kategoriPelanggaran = DB::table('rekomendasi_siswa')
-                ->where('nisn', $nisn)
-                ->where('metode', 'KNN-Pelanggaran')
-                ->value('kategori');
-
-            $votes = collect([$kategoriNilai, $kategoriAbsen, $kategoriPelanggaran])
-                ->countBy()
-                ->sortDesc();
-
-            $finalKategori = $votes->keys()->first();
-
-            DB::table('rekomendasi_siswa')->updateOrInsert([
-                'nisn' => $nisn,
-                'metode' => 'Final-KNN',
-            ], [
-                'kategori' => $finalKategori,
-                'sumber' => 'knn',
-                'keterangan' => 'Keputusan akhir ditentukan berdasarkan voting KNN dari kategori nilai, absen, dan pelanggaran.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        return back()->with('success', 'Keputusan akhir KNN berhasil disimpan.');
-    }
-
-
-    public function klasifikasiBaru(string $nisn)
-    {
-        $k = 3;
-
-        // ----- KNN NILAI -----
-        $fields = ['bindo', 'bing', 'mat', 'ipa', 'ips', 'agama', 'ppkn', 'sosbud', 'tik', 'penjas'];
-        $nilaiBaru = DB::table('nilai')->where('nisn', $nisn)->first();
-        $trainNilai = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Nilai')->get();
-
-        $kategoriNilai = null;
-
-        if ($nilaiBaru && $trainNilai->count() >= $k) {
-            $distNilai = $trainNilai->map(function ($row) use ($fields, $nilaiBaru) {
-                $nilaiTrain = DB::table('nilai')->where('nisn', $row->nisn)->first();
-                $a = collect($fields)->map(fn($f) => ($nilaiTrain->$f ?? 0) / 100)->toArray();
-                $b = collect($fields)->map(fn($f) => ($nilaiBaru->$f ?? 0) / 100)->toArray();
-                return [
-                    'kategori' => $row->kategori,
-                    'jarak' => $this->euclideanDistance($a, $b)
-                ];
-            });
-
-            $kategoriNilai = $distNilai->sortBy('jarak')
-                ->take($k)
-                ->groupBy('kategori')
-                ->map->count()
-                ->sortDesc()
-                ->keys()
-                ->first();
-
-            if ($kategoriNilai) {
-                DB::table('rekomendasi_siswa')->updateOrInsert([
-                    'nisn' => $nisn,
-                    'metode' => 'KNN-Nilai',
-                ], [
-                    'kategori' => $kategoriNilai,
-                    'sumber' => 'knn',
-                    'keterangan' => 'Kategori nilai diprediksi dengan KNN.',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // ----- KNN ABSEN -----
-        $jumlahBaru = DB::table('absensi')
-            ->where('nisn', $nisn)
-            ->select(DB::raw('SUM(alpa + bolos) as jumlah'))
-            ->value('jumlah') ?? 0;
-
-        $trainAbsen = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Absen')->get();
-        $kategoriAbsen = null;
-
-        if ($trainAbsen->count() >= $k) {
-            $distAbsen = $trainAbsen->map(function ($row) use ($jumlahBaru) {
-                $jumlahTrain = DB::table('absensi')
-                    ->where('nisn', $row->nisn)
-                    ->select(DB::raw('SUM(alpa + bolos) as jumlah'))
-                    ->value('jumlah') ?? 0;
-                return [
-                    'kategori' => $row->kategori,
-                    'jarak' => abs($jumlahTrain - $jumlahBaru),
-                ];
-            });
-
-            $kategoriAbsen = $distAbsen->sortBy('jarak')
-                ->take($k)
-                ->groupBy('kategori')
-                ->map->count()
-                ->sortDesc()
-                ->keys()
-                ->first();
-
-            if ($kategoriAbsen) {
-                DB::table('rekomendasi_siswa')->updateOrInsert([
-                    'nisn' => $nisn,
-                    'metode' => 'KNN-Absen',
-                ], [
-                    'kategori' => $kategoriAbsen,
-                    'sumber' => 'knn',
-                    'keterangan' => 'Kategori absen diprediksi dengan KNN.',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // ----- KNN PELANGGARAN -----
-        $poinBaru = DB::table('violations')
-            ->join('jenis_pelanggaran', 'jenis_pelanggaran.id', '=', 'violations.jenis_pelanggaran_id')
-            ->join('students', 'students.id', '=', 'violations.student_id')
-            ->where('students.nisn', $nisn)
-            ->sum('jenis_pelanggaran.poin');
-
-        $trainPel = DB::table('rekomendasi_siswa')->where('metode', 'KNN-Pelanggaran')->get();
-        $kategoriPel = null;
-
-        if ($trainPel->count() >= $k) {
-            $distPel = $trainPel->map(function ($row) use ($poinBaru) {
-                $poinTrain = DB::table('violations')
-                    ->join('jenis_pelanggaran', 'jenis_pelanggaran.id', '=', 'violations.jenis_pelanggaran_id')
-                    ->join('students', 'students.id', '=', 'violations.student_id')
-                    ->where('students.nisn', $row->nisn)
-                    ->sum('jenis_pelanggaran.poin');
-
-                return [
-                    'kategori' => $row->kategori,
-                    'jarak' => abs($poinTrain - $poinBaru),
-                ];
-            });
-
-            $kategoriPel = $distPel->sortBy('jarak')
-                ->take($k)
-                ->groupBy('kategori')
-                ->map->count()
-                ->sortDesc()
-                ->keys()
-                ->first();
-
-            if ($kategoriPel) {
-                DB::table('rekomendasi_siswa')->updateOrInsert([
-                    'nisn' => $nisn,
-                    'metode' => 'KNN-Pelanggaran',
-                ], [
-                    'kategori' => $kategoriPel,
-                    'sumber' => 'knn',
-                    'keterangan' => 'Kategori pelanggaran diprediksi dengan KNN.',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // ----- FINAL VOTING -----
-        if ($kategoriNilai && $kategoriAbsen && $kategoriPel) {
-            $votes = collect([$kategoriNilai, $kategoriAbsen, $kategoriPel])
-                ->countBy()
-                ->sortDesc();
-            $finalKategori = $votes->keys()->first();
-
-            DB::table('rekomendasi_siswa')->updateOrInsert([
-                'nisn' => $nisn,
-                'metode' => 'Final-KNN',
-            ], [
-                'kategori' => $finalKategori,
-                'sumber' => 'knn',
-                'keterangan' => 'Kategori final hasil voting dari KNN nilai, absen, pelanggaran.',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
     }
 }

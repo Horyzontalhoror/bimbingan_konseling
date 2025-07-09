@@ -1,0 +1,294 @@
+/* Umum - Disesuaikan agar bekerja dengan Bootstrap/SB2 container */
+.dashboard-container {
+    /* max-width akan ditangani oleh col-lg-8/10 di Blade */
+    /* margin: 0 auto; - ditangani oleh justify-content-center di Bootstrap row */
+    padding: 0;
+    /* Padding sudah ada dari .container-fluid di layout */
+}
+
+/* Header Halaman */
+.header-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    /* Sesuaikan dengan mb-4 Bootstrap */
+}
+
+@media (min-width: 640px) {
+    /* sm: */
+    .header-section {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+@media (min-width: 768px) {
+    /* md: */
+    .header-section {
+        margin-bottom: 2rem;
+        /* Agak lebih besar untuk md: */
+    }
+}
+
+.header-title {
+    font-size: 1.875rem;
+    /* text-3xl */
+    font-weight: 800;
+    /* font-extrabold */
+    color: #1a202c;
+    /* text-gray-800 */
+    line-height: 1.25;
+    /* leading-tight */
+    margin-bottom: 1rem;
+    /* mb-4 */
+}
+
+.dark .header-title {
+    color: #f7fafc;
+    /* dark:text-gray-100 */
+}
+
+@media (min-width: 768px) {
+    /* md: */
+    .header-title {
+        font-size: 2.25rem;
+        /* md:text-4xl */
+    }
+}
+
+@media (min-width: 640px) {
+    /* sm: */
+    .header-title {
+        margin-bottom: 0;
+        /* sm:mb-0 */
+    }
+}
+
+.header-icon {
+    margin-right: 0.75rem;
+    /* me-3 */
+    color: var(--primary-color, #ef4444);
+    /* text-primary, fallback to red */
+    font-size: 1.5rem;
+    /* text-2xl */
+}
+
+@media (min-width: 768px) {
+    /* md: */
+    .header-icon {
+        font-size: 1.875rem;
+        /* md:text-3xl */
+    }
+}
+
+.user-name {
+    color: #1a202c;
+    /* text-gray-900 */
+}
+
+.dark .user-name {
+    color: #ffffff;
+    /* dark:text-white */
+}
+
+/* Welcome Card for Student Dashboard */
+.welcome-card-student {
+    position: relative;
+    background: linear-gradient(to bottom right, #e0f2f7, #c1e7f0);
+    /* Warna biru muda yang cerah */
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+    /* Lebih besar dari p-6 */
+    margin-bottom: 2rem;
+    border: 1px solid #a7d9e4;
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.welcome-card-student:hover {
+    transform: scale(1.005);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
+        0 8px 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+.dark .welcome-card-student {
+    background: linear-gradient(to bottom right, #1f2a38, #2a3d54);
+    /* Darker blues for dark mode */
+    border-color: #3f587a;
+}
+
+.welcome-card-student .decorative-shape-1 {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5rem;
+    height: 5rem;
+    background-color: rgba(59, 130, 246, 0.3);
+    /* Biru, dari secondary-color */
+    border-bottom-left-radius: 9999px;
+    transform: translate(50%, -50%);
+    filter: blur(1rem);
+    pointer-events: none;
+}
+
+.dark .welcome-card-student .decorative-shape-1 {
+    background-color: rgba(30, 58, 138, 0.4);
+}
+
+.welcome-card-student .decorative-shape-2 {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 7rem;
+    height: 7rem;
+    background-color: rgba(239, 68, 68, 0.3);
+    /* Merah, dari primary-color */
+    border-top-right-radius: 9999px;
+    transform: translate(-50%, 50%);
+    filter: blur(1rem);
+    pointer-events: none;
+}
+
+.dark .welcome-card-student .decorative-shape-2 {
+    background-color: rgba(127, 29, 29, 0.4);
+}
+
+.student-welcome-text {
+    color: #4a5568;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    display: block;
+    /* Agar setiap kalimat di div terpisah menjadi block */
+}
+
+.dark .student-welcome-text {
+    color: #a0aec0;
+}
+
+.student-quote-block {
+    position: relative;
+    padding-left: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    margin-top: 1.5rem;
+    border-left: 4px solid var(--secondary-color, #3b82f6);
+    /* Gunakan secondary color untuk quote */
+    font-style: italic;
+    color: #4a5568;
+    background-color: #f7fafc;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+.dark .student-quote-block {
+    color: #a0aec0;
+    background-color: #3f3f46;
+}
+
+.student-quote-block p::before {
+    content: "“";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 2.25rem;
+    font-family: serif;
+    color: var(--secondary-color, #3b82f6);
+    opacity: 0.5;
+    font-weight: bold;
+}
+
+.student-quote-block p::after {
+    content: "”";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    font-size: 2.25rem;
+    font-family: serif;
+    color: var(--secondary-color, #3b82f6);
+    opacity: 0.5;
+    font-weight: bold;
+}
+
+/* Animasi */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIcon {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    25% {
+        transform: translateY(-5px);
+    }
+
+    50% {
+        transform: translateY(0);
+    }
+
+    75% {
+        transform: translateY(-2px);
+    }
+}
+
+/* Kelas animasi */
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.8s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-bounce-icon {
+    animation: bounceIcon 1.5s infinite;
+}
+
+/* Variabel warna */
+:root {
+    --primary-color: #ef4444;
+    /* Default merah */
+    --secondary-color: #3b82f6;
+    /* Default biru */
+}

@@ -4,117 +4,135 @@ namespace App\Http\Controllers\Auth\guru_bk;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon; // Pastikan ini di-import untuk penggunaan Carbon::now()
 
 class KMeansController extends Controller
 {
-    // Fungsi keputusan akhir
-    // Fungsi ini bertujuan untuk meningkatkan akurasi penentuan kategori siswa.
-    // Dengan mempertimbangkan tiga aspek sekaligus (nilai akademik, kehadiran, dan pelanggaran),
-    // guru dapat mengambil keputusan yang lebih spesifik dan adil.
-    // Pendekatan ini membantu guru memahami faktor utama yang mempengaruhi hasil akhir,
-    // sehingga keputusan yang diambil tidak hanya berdasarkan satu aspek saja.
+    // --- Konstanta untuk Kategori dan Metode ---
+    // Mendefinisikan string literal sebagai konstanta adalah praktik terbaik
+    // untuk meningkatkan keterbacaan, mengurangi kesalahan ketik, dan mempermudah pemeliharaan.
+
+    // Kategori Hasil Rekomendasi / Kategori Nilai Siswa
+    const KATEGORI_BUTUH_BIMBINGAN = 'Butuh Bimbingan';
+    const KATEGORI_CUKUP = 'Cukup';
+    const KATEGORI_BAIK = 'Baik';
+
+    // Kategori Absensi Siswa
+    const KATEGORI_ABSEN_SERING = 'Sering Absen';
+    const KATEGORI_ABSEN_CUKUP = 'Cukup';
+    const KATEGORI_ABSEN_JARANG = 'Jarang Absen'; // Asumsi ada kategori ini
+
+    // Kategori Pelanggaran Siswa
+    const KATEGORI_PELANGGARAN_SERING = 'Sering';
+    const KATEGORI_PELANGGARAN_RINGAN = 'Ringan';
+    const KATEGORI_PELANGGARAN_TIDAK_ADA = 'Tidak Ada'; // Asumsi ada kategori ini
+
+    // Metode Pengambilan Data dari Tabel 'rekomendasi_siswa'
+    const METODE_KMEANS_NILAI = 'KMeans-Nilai';
+    const METODE_KMEANS_ABSEN = 'KMeans-Absen';
+    const METODE_KMEANS_PELANGGARAN = 'KMeans-Pelanggaran';
+    const METODE_FINAL = 'Final';
+    const SUMBER_FINAL = 'final';
+
+    /**
+     * Menentukan keputusan akhir rekomendasi untuk setiap siswa
+     * berdasarkan kategori nilai akademik, kehadiran, dan pelanggaran.
+     *
+     * Fungsi ini bertujuan untuk meningkatkan akurasi penentuan kategori siswa.
+     * Dengan mempertimbangkan tiga aspek sekaligus, guru dapat mengambil keputusan
+     * yang lebih spesifik dan adil, serta memahami faktor utama yang mempengaruhi
+     * hasil akhir, sehingga keputusan yang diambil tidak hanya berdasarkan satu aspek saja.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function keputusanAkhir()
     {
-        // pengambilan database
-        $data = DB::table('rekomendasi_siswa as nilai')
+        $sumber = self::SUMBER_FINAL;
+
+        $data = DB::table('students')
+            ->leftJoin('rekomendasi_siswa as knilai', function ($q) {
+                $q->on('students.nisn', '=', 'knilai.nisn')->where('knilai.metode', 'KNN-Nilai');
+            })
+            ->leftJoin('rekomendasi_siswa as kknilai', function ($q) {
+                $q->on('students.nisn', '=', 'kknilai.nisn')->where('kknilai.metode', 'KMeans-Nilai');
+            })
+            ->leftJoin('rekomendasi_siswa as kabsen', function ($q) {
+                $q->on('students.nisn', '=', 'kabsen.nisn')->where('kabsen.metode', 'KMeans-Absen');
+            })
+            ->leftJoin('rekomendasi_siswa as knabsen', function ($q) {
+                $q->on('students.nisn', '=', 'knabsen.nisn')->where('knabsen.metode', 'KNN-Absen');
+            })
+            ->leftJoin('rekomendasi_siswa as kpel', function ($q) {
+                $q->on('students.nisn', '=', 'kpel.nisn')->where('kpel.metode', 'KMeans-Pelanggaran');
+            })
+            ->leftJoin('rekomendasi_siswa as knpel', function ($q) {
+                $q->on('students.nisn', '=', 'knpel.nisn')->where('knpel.metode', 'KNN-Pelanggaran');
+            })
             ->select(
-                'nilai.nisn',
-                'nilai.kategori as kategori_nilai',
-                'absen.kategori as kategori_absen',
-                'pel.kategori as kategori_pelanggaran'
+                'students.nisn',
+                DB::raw('COALESCE(kknilai.kategori, knilai.kategori) as kategori_nilai'),
+                DB::raw('COALESCE(kabsen.kategori, knabsen.kategori) as kategori_absen'),
+                DB::raw('COALESCE(kpel.kategori, knpel.kategori) as kategori_pelanggaran')
             )
-            ->join('rekomendasi_siswa as absen', function ($join) {
-                $join->on('nilai.nisn', '=', 'absen.nisn')
-                    ->where('absen.metode', 'KMeans-Absen');
-            })
-            ->join('rekomendasi_siswa as pel', function ($join) {
-                $join->on('nilai.nisn', '=', 'pel.nisn')
-                    ->where('pel.metode', 'KMeans-Pelanggaran');
-            })
-            ->where('nilai.metode', 'KMeans-Nilai')
             ->get();
 
-        // Daftar kombinasi kategori yang digunakan untuk menentukan keputusan akhir.
-        // Dengan mendefinisikan kombinasi ini secara eksplisit, proses pengambilan keputusan
-        // menjadi lebih transparan, mudah dipahami, dan dapat meningkatkan akurasi hasil akhir.
-        // Setiap kombinasi mewakili kondisi siswa berdasarkan nilai akademik, kehadiran, dan pelanggaran.
-        $butuhBimbingan = [
-            'Butuh Bimbingan-Sering Absen-Sering',
-            'Butuh Bimbingan-Sering Absen-Ringan',
-            'Butuh Bimbingan-Sering Absen-Tidak Pernah',
-            'Butuh Bimbingan-Cukup-Sering',
-            'Butuh Bimbingan-Cukup-Ringan',
-            'Butuh Bimbingan-Cukup-Tidak Pernah',
-            'Butuh Bimbingan-Rajin-Sering',
-            'Butuh Bimbingan-Rajin-Ringan',
-            'Butuh Bimbingan-Rajin-Tidak Pernah',
-        ];
+        $recordsToUpsert = [];
+        $timestamp = now();
 
-        $cukup = [
-            'Cukup-Sering Absen-Sering',
-            'Cukup-Sering Absen-Ringan',
-            'Cukup-Sering Absen-Tidak Pernah',
-            'Cukup-Cukup-Sering',
-            'Cukup-Cukup-Ringan',
-            'Cukup-Cukup-Tidak Pernah',
-            'Cukup-Rajin-Sering',
-            'Cukup-Rajin-Ringan',
-            'Cukup-Rajin-Tidak Pernah',
-        ];
-
-        $baik = [
-            'Baik-Sering Absen-Sering',
-            'Baik-Sering Absen-Ringan',
-            'Baik-Sering Absen-Tidak Pernah',
-            'Baik-Cukup-Sering',
-            'Baik-Cukup-Ringan',
-            'Baik-Cukup-Tidak Pernah',
-            'Baik-Rajin-Sering',
-            'Baik-Rajin-Ringan',
-            'Baik-Rajin-Tidak Pernah',
-        ];
-        // jumlah kombinasi: 3×3×3=27 kombinasi 👍
-
-        // logika keputusan akhir
         foreach ($data as $row) {
             $nisn = $row->nisn;
-            $nilai = $row->kategori_nilai;
-            $absen = $row->kategori_absen;
-            $pel = $row->kategori_pelanggaran;
+            $nilai = $row->kategori_nilai ?? '-';
+            $absen = $row->kategori_absen ?? '-';
+            $pel = $row->kategori_pelanggaran ?? '-';
 
-            $kombinasi = "{$nilai}-{$absen}-{$pel}";
+            $final = self::KATEGORI_BAIK;
 
-            // Penentuan keputusan akhir berdasarkan kombinasi
-            if (in_array($kombinasi, $butuhBimbingan)) {
-                $final = 'Butuh Bimbingan';
-            } elseif (in_array($kombinasi, $cukup)) {
-                $final = 'Cukup';
-            } else {
-                $final = 'Baik';
+            if (
+                $nilai === self::KATEGORI_BUTUH_BIMBINGAN ||
+                $absen === self::KATEGORI_ABSEN_SERING ||
+                $pel === self::KATEGORI_PELANGGARAN_SERING
+            ) {
+                $final = self::KATEGORI_BUTUH_BIMBINGAN;
+            } elseif (
+                $nilai === self::KATEGORI_CUKUP ||
+                $absen === self::KATEGORI_ABSEN_CUKUP ||
+                $pel === self::KATEGORI_PELANGGARAN_RINGAN
+            ) {
+                $final = self::KATEGORI_CUKUP;
             }
 
-            // Catatan penyebab dominan
-            $penyebab = [];
-            if ($nilai === 'Butuh Bimbingan') $penyebab[] = 'akademik buruk';
-            if ($absen === 'Sering Absen') $penyebab[] = 'sering tidak hadir';
-            if ($pel === 'Sering') $penyebab[] = 'banyak pelanggaran';
+            $keterangan = "Kategori akhir dari kombinasi (Nilai: $nilai, Absen: $absen, Pelanggaran: $pel)";
 
-            $keterangan = !empty($penyebab)
-                ? 'Faktor utama: ' . implode(', ', $penyebab)
-                : "Kategori akhir dari kombinasi ($nilai, $absen, $pel)";
+            // Cek apakah data final sudah ada
+            $exists = DB::table('rekomendasi_siswa')
+                ->where('nisn', $nisn)
+                ->where('metode', self::METODE_FINAL)
+                ->exists();
 
-            DB::table('rekomendasi_siswa')->updateOrInsert(
-                ['nisn' => $nisn, 'metode' => 'Final'],
-                [
-                    'kategori' => $final,
-                    'sumber' => 'final',
-                    'keterangan' => $keterangan,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
+            $record = [
+                'nisn' => $nisn,
+                'metode' => self::METODE_FINAL,
+                'kategori' => $final,
+                'sumber' => $sumber,
+                'keterangan' => $keterangan,
+                'updated_at' => $timestamp
+            ];
+
+            if (!$exists) {
+                $record['created_at'] = $timestamp;
+            }
+
+            $recordsToUpsert[] = $record;
+        }
+
+        if (!empty($recordsToUpsert)) {
+            DB::table('rekomendasi_siswa')->upsert(
+                $recordsToUpsert,
+                ['nisn', 'metode'],
+                ['kategori', 'sumber', 'keterangan', 'updated_at'] // ❗ created_at jangan di-update
             );
         }
 
-        return back()->with('success', 'Keputusan akhir berdasarkan kombinasi kategori telah ditentukan.');
+        return back()->with('success', 'Keputusan akhir berhasil ditentukan dengan data gabungan KMeans dan KNN.');
     }
 }

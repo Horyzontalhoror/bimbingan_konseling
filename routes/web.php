@@ -24,7 +24,10 @@ use App\Http\Controllers\Auth\guru_bk\KMeans\KMeansAbsenController;
 use App\Http\Controllers\Auth\guru_bk\KMeans\KMeansPelanggaranController;
 
 use App\Http\Controllers\Auth\Parent\ParentLoginController;
+use App\Http\Controllers\Auth\Parent\ParentDashboardController;
+
 use App\Http\Controllers\Auth\Student\StudentLoginController;
+use App\Http\Controllers\Auth\Student\StudentDashboardController;
 
 use App\Exports\NilaiExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -41,7 +44,11 @@ Route::prefix('siswa')->name('student.')->group(function () {
     Route::post('/logout', [StudentLoginController::class, 'logout'])->name('logout');
 
     Route::middleware('auth:student')->group(function () {
-        Route::view('/dashboard', 'siswa.dashboard')->name('dashboard');
+        // Route::get('/dashboard', [StudentDashboardController::class, 'dashboard'])->name('dashboard');
+        Route::get('/konseling', [StudentDashboardController::class, 'konseling'])->name('konseling');
+        Route::get('/index', [StudentDashboardController::class, 'index'])->name('index');
+        Route::get('/nilai', [StudentDashboardController::class, 'nilai'])->name('nilai');
+        Route::get('/surat-panggilan', [StudentDashboardController::class, 'suratPanggilan'])->name('surat.panggilan');
     });
 });
 
@@ -52,11 +59,16 @@ Route::prefix('orangtua')->name('parent.')->group(function () {
     Route::middleware('guest:parent')->group(function () {
         Route::get('/login', [ParentLoginController::class, 'showLoginForm'])->name('login');
     });
+
     Route::post('/login', [ParentLoginController::class, 'login'])->name('login.submit');
     Route::post('/logout', [ParentLoginController::class, 'logout'])->name('logout');
 
     Route::middleware('auth:parent')->group(function () {
-        Route::view('/dashboard', 'orangtua.dashboard')->name('dashboard');
+        Route::get('/dashboard', [ParentDashboardController::class, 'dashboard'])->name('dashboard');
+        Route::get('/index', [ParentDashboardController::class, 'index'])->name('index');
+        Route::get('/nilai', [ParentDashboardController::class, 'nilai'])->name('nilai');
+        Route::get('/jadwal-konseling', [ParentDashboardController::class, 'jadwalKonseling'])->name('konseling');
+        Route::get('/surat-panggilan', [ParentDashboardController::class, 'suratPanggilan'])->name('panggilan');
     });
 });
 
@@ -105,10 +117,10 @@ Route::middleware('auth:web')->group(function () {
     Route::prefix('algoritma')->name('algoritma.')->group(function () {
         Route::get('/', [AlgoritmaController::class, 'index'])->name('index');
         Route::get('/kmeans', [KMeansController::class, 'index'])->name('kmeans');
-        Route::get('/knn', [KNNController::class, 'index'])->name('knn');
         Route::get('/kmeans/{id}/edit', [AlgoritmaController::class, 'edit'])->name('kmeans.edit');
         Route::put('/kmeans/{id}', [AlgoritmaController::class, 'update'])->name('kmeans.update');
 
+        Route::get('/knn', [KNNController::class, 'index'])->name('knn');
         // reser data
         Route::post('/reset-Kategori', [AlgoritmaController::class, 'resetKategori'])->name('reset.kategori');
     });
@@ -132,10 +144,10 @@ Route::middleware('auth:web')->group(function () {
 
     // Tampilan
     Route::get('/keputusanAkhir', [KMeansController::class, 'keputusanAkhir'])->name('keputusanAkhir');
-    Route::get('/keputusanAkhirKNN', [KNNController::class, 'keputusanAkhirKNN'])->name('keputusanAkhirKNN');
+    Route::get('/keputusanAkhirKNN', [KNNController::class, 'predict'])->name('keputusanAkhirKNN');
     // Rekomendasi
     Route::get('/rekomendasi', [RekomendasiController::class, 'perbandingan'])->name('rekomendasi.perbandingan');
-
+    Route::get('/rekomendasi/perbandingan', [RekomendasiController::class, 'perbandingan'])->name('rekomendasi.perbandingan');
 
     // Jenis Pelanggaran
     Route::prefix('jenis-pelanggaran')->name('jenis-pelanggaran.')->group(function () {

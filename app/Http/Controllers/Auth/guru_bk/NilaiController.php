@@ -14,11 +14,6 @@ class NilaiController extends Controller
             ->leftJoin('nilai', 'students.nisn', '=', 'nilai.nisn')
             ->select('nilai.*', 'students.name', 'students.class', 'students.nisn');
 
-        // Hapus filter kategori karena kolom nilai.kategori sudah tidak ada
-        // if (request()->filled('kategori')) {
-        //     $query->where('nilai.kategori', request('kategori'));
-        // }
-
         if (request()->filled('kelas')) {
             $query->where('students.class', request('kelas'));
         }
@@ -30,8 +25,7 @@ class NilaiController extends Controller
             });
         }
 
-        // Hapus orderBy berdasarkan kategori
-        $data = $query->orderByDesc('nilai.rata_rata')
+        $data = $query->orderByDesc('nilai.updated_at')
             ->paginate(27)
             ->appends(request()->query());
 
@@ -44,11 +38,10 @@ class NilaiController extends Controller
         return view('guru_bk.nilai.index', compact('data', 'semuaKelas'));
     }
 
-    // edit
     public function edit($id)
     {
         $nilai = DB::table('nilai')->where('id', $id)->first();
-        if (!$nilai) abort(404);
+        if (!$nilai) abort(404, 'Data nilai tidak ditemukan.');
 
         $siswa = DB::table('students')
             ->where('nisn', $nilai->nisn)
@@ -58,21 +51,20 @@ class NilaiController extends Controller
         return view('guru_bk.nilai.edit', compact('nilai', 'siswa'));
     }
 
-    // update
     public function update(Request $request, $id)
     {
         $request->validate([
             'nisn' => 'required|string|max:20',
-            'bindo' => 'required|numeric',
-            'bing' => 'required|numeric',
-            'mat' => 'required|numeric',
-            'ipa' => 'required|numeric',
-            'ips' => 'required|numeric',
-            'agama' => 'required|numeric',
-            'ppkn' => 'required|numeric',
-            'sosbud' => 'required|numeric',
-            'tik' => 'required|numeric',
-            'penjas' => 'required|numeric',
+            'bindo' => 'required|numeric|min:0|max:100',
+            'bing' => 'required|numeric|min:0|max:100',
+            'mat' => 'required|numeric|min:0|max:100',
+            'ipa' => 'required|numeric|min:0|max:100',
+            'ips' => 'required|numeric|min:0|max:100',
+            'agama' => 'required|numeric|min:0|max:100',
+            'ppkn' => 'required|numeric|min:0|max:100',
+            'sosbud' => 'required|numeric|min:0|max:100',
+            'tik' => 'required|numeric|min:0|max:100',
+            'penjas' => 'required|numeric|min:0|max:100',
         ]);
 
         $nilai = DB::table('nilai')->where('id', $id)->first();
@@ -96,12 +88,6 @@ class NilaiController extends Controller
         $jumlah = array_sum($mapel);
         $rata = round($jumlah / count($mapel), 2);
 
-        $kategori = match (true) {
-            $rata >= 85 => 'Baik',
-            $rata >= 75 => 'Cukup',
-            default     => 'Butuh Bimbingan'
-        };
-
         $data = array_merge(
             ['nisn' => $request->nisn],
             $mapel,
@@ -112,6 +98,11 @@ class NilaiController extends Controller
         );
 
         DB::table('nilai')->where('id', $id)->update($data);
+
+        // 🚩 Tandai siswa agar diproses ulang oleh KNN
+        DB::table('students')->where('nisn', $request->nisn)->update([
+            'is_predicted' => false,
+        ]);
 
         return redirect()->route('nilai.index')->with('success', 'Nilai siswa berhasil diperbarui.');
     }

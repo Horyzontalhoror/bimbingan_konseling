@@ -17,7 +17,7 @@ class ParentLoginSeeder extends Seeder
             'name' => 'Orang Tua Alexandra',
             'email' => 'ortu@example.com',
             'password' => Hash::make('password123'),
-            'nisn' => '109722270'
+            'nisn' => '0109722270'
         ]);
     }
 }

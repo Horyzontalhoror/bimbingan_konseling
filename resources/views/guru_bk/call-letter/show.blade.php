@@ -113,19 +113,21 @@
                 <div class="surat-container mx-auto" style="max-width: 30cm;">
                     <!-- KOP SURAT -->
                     <div class="kop-surat">
-                        <img src="https://placehold.co/100x100/png?text=LOGO" alt="Logo Sekolah">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg"
+                            alt="Logo Sekolah">
                         <div class="text-kop">
-                            <h5>PEMERINTAH KOTA MALANG</h5>
+                            <h5>PEMERINTAH KABUPATEN FLOTIM</h5>
                             <h4>DINAS PENDIDIKAN DAN KEBUDAYAAN</h4>
-                            <h4 class="text-primary">SMP NEGERI 1 MALANG</h4>
-                            <p>Jl. Pendidikan No. 1, Malang, Jawa Timur | Telp: (0341) 123456 | Email:
-                                info@smpn1malang.sch.id</p>
+                            <h4 class="text-primary">SMP NEGERI 1 SOLOR BARAT</h4>
+                            <p>Pamakayo, Desa Lewonama, Kecamatan Solor Barat, Kabupaten Flores Timur, NTT
+                                <br> Telp: (0341) 123456 | Email: info@smpn1solorbarat.sch.id
+                            </p>
                         </div>
                     </div>
 
                     <!-- NOMOR & TANGGAL SURAT -->
                     <div class="text-right mb-4">
-                        Malang, {{ \Carbon\Carbon::parse($surat->tanggal)->isoFormat('D MMMM Y') }}
+                        Pamakayo, {{ \Carbon\Carbon::parse($surat->tanggal)->isoFormat('D MMMM Y') }}
                     </div>
 
                     <div class="row">
@@ -177,6 +179,9 @@
                         </p>
                         <table class="table table-borderless table-sm ml-4" style="width: 80%;">
                             <tr>
+                                @php
+                                    \Carbon\Carbon::setLocale('id');
+                                @endphp
                                 <td style="width: 25%;">Hari, Tanggal</td>
                                 <td>: {{ \Carbon\Carbon::parse($surat->tanggal_pertemuan)->isoFormat('dddd, D MMMM Y') }}
                                 </td>

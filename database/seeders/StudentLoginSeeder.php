@@ -14,7 +14,7 @@ class StudentLoginSeeder extends Seeder
     public function run()
     {
         StudentLogin::create([
-            'nisn' => '109722270',
+            'nisn' => '0109722270',
             'password' => Hash::make('password123')
         ]);
     }

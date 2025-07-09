@@ -1,6 +1,6 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <!-- Sidebar - Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('student.dashboard') }}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('student.index') }}">
         <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-user-graduate"></i>
         </div>
@@ -9,9 +9,17 @@
 
     <hr class="sidebar-divider my-0">
 
-    <!-- Dashboard -->
+    {{-- <!-- Dashboard -->
     <li class="nav-item">
         <a class="nav-link" href="{{ route('student.dashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+    </li> --}}
+
+    <!-- Dashboard -->
+    <li class="nav-item">
+        <a class="nav-link" href="{{ route('student.index') }}">
             <i class="fas fa-fw fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
@@ -19,7 +27,7 @@
 
     <!-- Jadwal Konseling -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('student.konseling') }}">
             <i class="fas fa-calendar-alt"></i>
             <span>Jadwal Konseling</span>
         </a>
@@ -27,7 +35,7 @@
 
     <!-- Lihat Nilai -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('student.nilai') }}">
             <i class="fas fa-chart-line"></i>
             <span>Nilai Akademik</span>
         </a>
@@ -35,7 +43,7 @@
 
     <!-- Surat Panggilan -->
     <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link" href="{{ route('student.surat.panggilan') }}">
             <i class="fas fa-envelope-open-text"></i>
             <span>Surat Panggilan</span>
         </a>

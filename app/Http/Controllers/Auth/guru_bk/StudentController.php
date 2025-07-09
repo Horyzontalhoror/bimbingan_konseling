@@ -17,7 +17,6 @@ class StudentController extends Controller
     {
         $query = Student::query();
 
-        // Filter berdasarkan kata kunci
         if (request('q')) {
             $query->where(function ($q) {
                 $q->where('name', 'like', '%' . request('q') . '%')
@@ -25,30 +24,26 @@ class StudentController extends Controller
             });
         }
 
-        // Filter berdasarkan kelas
         if (request('kelas')) {
             $query->where('class', request('kelas'));
         }
 
         $students = $query->latest()->paginate(27)->appends(request()->query());
-
-        // Ambil semua kelas unik
         $semuaKelas = Student::select('class')->distinct()->orderBy('class')->pluck('class');
 
         return view('guru_bk.students.index', compact('students', 'semuaKelas'));
     }
 
-    // create data baru
     public function create()
     {
         $jenisPelanggaran = JenisPelanggaran::all();
         return view('guru_bk.students.create', compact('jenisPelanggaran'));
     }
 
-    // store
     public function store(Request $request)
     {
         $nisn = $request->nisn;
+
         $request->validate([
             'name' => 'required|string|max:255',
             'nisn' => 'required|string|unique:students,nisn',
@@ -61,24 +56,27 @@ class StudentController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $nisn) {
-            // Simpan siswa
-            Student::create($request->only(['name', 'nisn', 'class']));
+            // Tambahkan flag is_predicted ke false agar diproses oleh KNN
+            Student::create(array_merge(
+                $request->only(['name', 'nisn', 'class']),
+                ['is_predicted' => false]
+            ));
 
             // Simpan nilai
             $nilaiData = $request->nilai ?? [];
-            \App\Models\Nilai::create(array_merge($nilaiData, [
+            Nilai::create(array_merge($nilaiData, [
                 'nisn' => $nisn,
                 'jumlah_nilai' => array_sum($nilaiData),
                 'rata_rata' => count($nilaiData) ? round(array_sum($nilaiData) / count($nilaiData), 2) : 0,
             ]));
 
             // Simpan absensi
-            \App\Models\Absensi::create(array_merge($request->absensi ?? [], [
+            Absensi::create(array_merge($request->absensi ?? [], [
                 'nisn' => $nisn,
                 'tanggal' => now(),
             ]));
 
-            // Simpan pelanggaran
+            // Simpan pelanggaran (jika ada)
             foreach ($request->pelanggaran ?? [] as $p) {
                 if (!empty($p['jenis_id'])) {
                     Violation::create([
@@ -92,23 +90,9 @@ class StudentController extends Controller
             }
         });
 
-        // Cek referensi KMeans tersedia
-        $count = DB::table('rekomendasi_siswa')->where('metode', 'like', 'KMeans%')->count();
-        if ($count < 3) {
-            return redirect()->route('students.index')
-                ->with('error', 'Data referensi KMeans belum tersedia. Jalankan KMeans terlebih dahulu.');
-        }
-
-        // Jalankan KNN
-        if (is_string($nisn) && !empty($nisn)) {
-            app(\App\Http\Controllers\Auth\guru_bk\KNNController::class)->klasifikasiBaru($nisn);
-        }
-
-        return redirect()->route('students.index')
-            ->with('success', 'Data siswa berhasil ditambahkan dan diklasifikasi.');
+        return redirect()->route('students.index')->with('success', 'Data siswa berhasil ditambahkan');
     }
 
-    // edit
     public function edit(Student $student)
     {
         return view('guru_bk.students.edit', compact('student'));
@@ -116,17 +100,14 @@ class StudentController extends Controller
 
     public function update(Request $request, Student $student)
     {
-        // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
             'nisn' => 'required|string|max:20|unique:students,nisn,' . $student->id,
             'class' => 'required|string|max:20',
         ]);
-        $student->update($request->only([
-            'name',
-            'nisn',
-            'class'
-        ]));
+
+        $student->update($request->only(['name', 'nisn', 'class']));
+
         return redirect()->route('students.index')->with('success', 'Data siswa berhasil diperbarui.');
     }
 

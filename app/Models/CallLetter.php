@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CallLetter extends Model
 {
+    protected $table = 'call_letters';
+
     protected $fillable = [
         'student_id',
         'wali_kelas',
@@ -18,6 +20,6 @@ class CallLetter extends Model
 
     public function student()
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(Student::class, 'student_id');
     }
 }
