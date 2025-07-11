@@ -93,7 +93,7 @@ Route::post('/logout', function () {
 // ==============================
 Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
+    Route::get('/dashboard/detail/{type}/{nisn}', [DashboardController::class, 'detail'])->name('detail');
     Route::resources([
         'students'   => StudentController::class,
         'schedules'  => CounselingScheduleController::class,

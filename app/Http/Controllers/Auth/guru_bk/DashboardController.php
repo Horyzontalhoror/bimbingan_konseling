@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth\guru_bk;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -21,9 +22,9 @@ class DashboardController extends Controller
                 ) AS rn
                 FROM rekomendasi_siswa
                 WHERE metode IN ('KNN-Nilai', 'KMeans-Nilai')
-            ) AS ranked_nilai
-            WHERE rn = 1
-        ) as nilai"), 'students.nisn', '=', 'nilai.nisn')
+                ) AS ranked_nilai
+                WHERE rn = 1
+            ) as nilai"), 'students.nisn', '=', 'nilai.nisn')
 
             ->leftJoin(DB::raw("(
             SELECT nisn, kategori FROM (
@@ -32,9 +33,9 @@ class DashboardController extends Controller
                 ) AS rn
                 FROM rekomendasi_siswa
                 WHERE metode IN ('KNN-Absen', 'KMeans-Absen')
-            ) AS ranked_absen
-            WHERE rn = 1
-        ) as absen"), 'students.nisn', '=', 'absen.nisn')
+                ) AS ranked_absen
+                WHERE rn = 1
+            ) as absen"), 'students.nisn', '=', 'absen.nisn')
 
             ->leftJoin(DB::raw("(
             SELECT nisn, kategori FROM (
@@ -43,15 +44,16 @@ class DashboardController extends Controller
                 ) AS rn
                 FROM rekomendasi_siswa
                 WHERE metode IN ('KNN-Pelanggaran', 'KMeans-Pelanggaran')
-            ) AS ranked_pelanggaran
-            WHERE rn = 1
-        ) as pelanggaran"), 'students.nisn', '=', 'pelanggaran.nisn')
+                ) AS ranked_pelanggaran
+                WHERE rn = 1
+            ) as pelanggaran"), 'students.nisn', '=', 'pelanggaran.nisn')
 
             ->leftJoin('rekomendasi_siswa as final', function ($q) {
                 $q->on('students.nisn', '=', 'final.nisn')->where('final.metode', '=', 'Final');
             })
 
             ->select(
+                // 'students.id',
                 'students.name',
                 'students.nisn',
                 'students.class',
@@ -124,5 +126,49 @@ class DashboardController extends Controller
             ->get();
 
         return view('guru_bk.dashboard.dashboard', compact('siswa', 'semuaKelas', 'statistik'));
+    }
+
+    public function detail($type, $nisn)
+    {
+        $mapping = [
+            'nilai' => 'nilai',
+            'absen' => 'absensi',
+            'pelanggaran' => 'violations',
+        ];
+
+        if (!array_key_exists($type, $mapping)) {
+            return response()->json(['html' => '<p class="text-danger">Tipe tidak valid.</p>']);
+        }
+
+        $tableName = $mapping[$type];
+
+        if ($type === 'pelanggaran') {
+            $rows = DB::table('violations')
+                ->leftJoin('jenis_pelanggaran', 'violations.jenis_pelanggaran_id', '=', 'jenis_pelanggaran.id')
+                ->select('violations.*')
+                ->where('violations.nisn', $nisn)
+                ->get();
+        } else {
+            $rows = DB::table($tableName)->where('nisn', $nisn)->get();
+        }
+
+        if ($rows->isEmpty()) {
+            return response()->json(['html' => "<p class='text-muted'>Data tidak ditemukan untuk NISN: $nisn</p>"]);
+        }
+
+        $html = '<table class="table table-bordered">';
+        foreach ($rows as $row) {
+            $html .= '<tr><td colspan="2" class="bg-light font-weight-bold text-primary"># ' . ($row->id ?? '-') . '</td></tr>';
+            foreach ($row as $key => $value) {
+                if (in_array($key, ['created_at', 'updated_at','id'])) continue;
+
+                $label = $key === 'jenis_pelanggaran_nama' ? 'Jenis Pelanggaran' : $key;
+                $html .= "<tr><th>{$label}</th><td>{$value}</td></tr>";
+            }
+            $html .= '<tr><td colspan="2" class="table-secondary"></td></tr>';
+        }
+        $html .= '</table>';
+
+        return response()->json(['html' => $html]);
     }
 }

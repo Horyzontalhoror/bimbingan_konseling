@@ -101,8 +101,8 @@
             </h6>
         </div>
 
-        {{-- Filter Pencarian --}}
         <div class="card-body">
+            {{-- Filter Pencarian --}}
             <form method="GET" class="row g-2 mb-4">
                 <div class="col-md-3">
                     <input type="text" name="q" class="form-control" placeholder="Cari nama atau NISN..."
@@ -114,8 +114,7 @@
                         <option value="Baik" {{ request('kategori') == 'Baik' ? 'selected' : '' }}>Baik</option>
                         <option value="Cukup" {{ request('kategori') == 'Cukup' ? 'selected' : '' }}>Cukup</option>
                         <option value="Butuh Bimbingan" {{ request('kategori') == 'Butuh Bimbingan' ? 'selected' : '' }}>
-                            Butuh Bimbingan
-                        </option>
+                            Butuh Bimbingan</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -136,8 +135,7 @@
 
             {{-- Isi Tabel --}}
             <div class="table-responsive">
-                <table id="dataTable" class="table table-striped table-bordered align-middle" width="100%"
-                    cellspacing="0">
+                <table id="dataTable" class="table table-striped table-bordered align-middle" width="100%">
                     <thead class="thead-dark text-center">
                         <tr>
                             <th>Nama</th>
@@ -158,38 +156,44 @@
 
                                 {{-- Nilai --}}
                                 <td>
-                                    <span
+                                    <button type="button" onclick="loadDetail('nilai', '{{ $row->nisn }}')"
                                         class="badge badge-pill px-3 py-2
                                         @if ($row->nilai === 'Baik') badge-success
                                         @elseif ($row->nilai === 'Cukup') badge-warning
                                         @elseif ($row->nilai === 'Butuh Bimbingan') badge-danger
-                                        @else badge-secondary @endif">
+                                        @else badge-secondary @endif"
+                                        data-nisn="{{ $row->nisn }}" data-type="nilai" data-toggle="modal"
+                                        data-target="#detailModal">
                                         {{ $row->nilai }}
-                                    </span>
+                                    </button>
                                 </td>
 
                                 {{-- Absen --}}
                                 <td>
-                                    <span
+                                    <button type="button" onclick="loadDetail('absen', '{{ $row->nisn }}')"
                                         class="badge badge-pill px-3 py-2
                                         @if ($row->absen === 'Rajin') badge-success
                                         @elseif ($row->absen === 'Cukup') badge-warning
                                         @elseif ($row->absen === 'Sering Absen') badge-danger
-                                        @else badge-secondary @endif">
+                                        @else badge-secondary @endif"
+                                        data-nisn="{{ $row->nisn }}" data-type="absen" data-toggle="modal"
+                                        data-target="#detailModal">
                                         {{ $row->absen }}
-                                    </span>
+                                    </button>
                                 </td>
 
                                 {{-- Pelanggaran --}}
                                 <td>
-                                    <span
-                                        class="badge badge-pill px-3 py-2
+                                    <button type="button" onclick="loadDetail('pelanggaran', '{{ $row->nisn }}')"
+                                        class="badge badge-pill btn-show-detail px-3 py-2
                                         @if ($row->pelanggaran === 'Tidak Pernah') badge-success
                                         @elseif ($row->pelanggaran === 'Ringan') badge-warning
                                         @elseif ($row->pelanggaran === 'Sering') badge-danger
-                                        @else badge-secondary @endif">
+                                        @else badge-secondary @endif"
+                                        data-nisn="{{ $row->nisn }}" data-type="pelanggaran" data-toggle="modal"
+                                        data-target="#detailModal">
                                         {{ $row->pelanggaran }}
-                                    </span>
+                                    </button>
                                 </td>
 
                                 {{-- Keputusan Akhir --}}
@@ -202,10 +206,10 @@
                                         @else badge-secondary @endif">
                                         <i
                                             class="fas
-                                            @if ($row->final === 'Baik') fa-check-circle
-                                            @elseif ($row->final === 'Cukup') fa-exclamation-circle
-                                            @elseif ($row->final === 'Butuh Bimbingan') fa-times-circle
-                                            @else fa-info-circle @endif me-1"></i>
+                                        @if ($row->final === 'Baik') fa-check-circle
+                                        @elseif ($row->final === 'Cukup') fa-exclamation-circle
+                                        @elseif ($row->final === 'Butuh Bimbingan') fa-times-circle
+                                        @else fa-info-circle @endif me-1"></i>
                                         {{ $row->final }}
                                     </span>
                                 </td>
@@ -219,6 +223,24 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                {{-- Modal Detail --}}
+                <div class="modal fade" id="detailModal" tabindex="-1" role="dialog"
+                    aria-labelledby="detailModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Detail Siswa</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" id="detailContent">
+                                <p class="text-muted">Memuat data...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -230,10 +252,25 @@
             </p>
         </div>
     </div>
+
 @endsection
 
 @push('scripts')
-    {{-- Karena chart dihapus, kita tidak lagi membutuhkan Chart.js di sini --}}
-    {{-- Anda bisa menghapus push scripts ini sepenuhnya jika tidak ada script lain yang dibutuhkan --}}
-    {{-- Atau biarkan kosong jika Anda berencana menambahkan script lain di masa mendatang --}}
+    <script>
+        function loadDetail(type, nisn) {
+            $('#detailModal').modal('show');
+            $('#detailContent').html('<p class="text-muted">Memuat data...</p>');
+
+            $.ajax({
+                url: `/dashboard/detail/${type}/${nisn}`,
+                type: 'GET',
+                success: function(res) {
+                    $('#detailContent').html(res.html);
+                },
+                error: function() {
+                    $('#detailContent').html('<p class="text-danger">Gagal memuat data.</p>');
+                }
+            });
+        }
+    </script>
 @endpush

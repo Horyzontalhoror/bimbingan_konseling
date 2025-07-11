@@ -29,10 +29,8 @@ class StudentDashboardController extends Controller
 
         return view('pages.student.dashboard', compact('student'));
     }
-
     public function index()
     {
-
         $studentLogin = Auth::guard('student')->user();
         $student = $studentLogin ? $studentLogin->student : null;
 
@@ -40,9 +38,10 @@ class StudentDashboardController extends Controller
             return redirect()->route('student.index')->withErrors(['Data siswa tidak ditemukan.']);
         }
 
-        $jadwal = CounselingSchedule::where('nisn', $student->nisn)->get();
+        // Ambil ringkasan konseling
+        $jadwalKonseling = CounselingSchedule::where('nisn', $student->nisn)->latest()->take(3)->get(); // ambil 3 terbaru
 
-        return view('pages.student.index', compact('student', 'jadwal'));
+        return view('pages.student.index', compact('student', 'jadwalKonseling'));
     }
 
     public function konseling()
