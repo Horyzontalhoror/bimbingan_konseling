@@ -187,7 +187,7 @@
                     @csrf
                     <input type="hidden" name="student_id" value="{{ $student->id }}">
                     <input type="hidden" name="wali_kelas" value="{{ $wali_kelas }}">
-                    <input type="hidden" name="tanggal" value="{{ $tanggal_surat }}">
+                    <input type="hidden" name="tanggal" value="{{ $tanggal_pertemuan }}">
                     <input type="hidden" name="keperluan" value="{{ $reason }}">
                     <input type="hidden" name="waktu_pertemuan" value="{{ $waktu_pertemuan }}">
                     <input type="hidden" name="tempat_pertemuan" value="{{ $tempat_pertemuan }}">

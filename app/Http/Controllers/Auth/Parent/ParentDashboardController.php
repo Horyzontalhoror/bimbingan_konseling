@@ -41,7 +41,12 @@ class ParentDashboardController extends Controller
         $student = $parent->student;
         $nilai = $student->nilai ?? null;
 
-        return view('pages.parent.index', compact('student', 'nilai'));
+        // Tambahkan ini untuk mengambil semua surat berdasarkan siswa
+        $surat = CallLetter::where('student_id', $student->id)
+            ->orderByDesc('tanggal')
+            ->get();
+
+        return view('pages.parent.index', compact('student', 'nilai', 'surat'));
     }
 
     public function nilai()

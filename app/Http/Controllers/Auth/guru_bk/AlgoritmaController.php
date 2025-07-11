@@ -89,8 +89,16 @@ class AlgoritmaController extends Controller
                 'Tidak Pernah',
                 'Ringan',
                 'Sering'
-            ])
-            ->delete();
+            ])->delete();
+
+        // Hapus semua status session proses KMeans
+        session()->forget([
+            'kmeans.nilai',
+            'kmeans.absen',
+            'kmeans.pelanggaran',
+            'kmeans.ready',
+            'kmeans.completed',
+        ]);
 
         return redirect()->route('algoritma.index')->with('success', 'Berhasil direset.');
     }

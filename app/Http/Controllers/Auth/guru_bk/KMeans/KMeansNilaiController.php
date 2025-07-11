@@ -9,10 +9,10 @@ class KMeansNilaiController extends Controller
 {
     public function cluster()
     {
-        // Ambil data nilai yang punya rata-rata
+        // Ambil data nilai yang memiliki rata-rata
         $data = DB::table('nilai')->whereNotNull('rata_rata')->get();
 
-        // Ambil konfigurasi centroid KMeans untuk tipe = nilai
+        // Ambil konfigurasi centroid KMeans bertipe nilai
         $centroids = DB::table('konfigurasi_kmeans')
             ->where('tipe', 'nilai')
             ->orderBy('nama_centroid')
@@ -22,27 +22,27 @@ class KMeansNilaiController extends Controller
             return back()->with('error', 'Centroid nilai belum dikonfigurasi.');
         }
 
-        // Cari min dan max rata-rata untuk normalisasi
+        // Cari nilai min dan max untuk normalisasi
         $min = $data->min('rata_rata');
         $max = $data->max('rata_rata');
 
         foreach ($data as $row) {
             $nisn = $row->nisn;
-            $nilaiNorm = ($row->rata_rata - $min) / max(($max - $min), 1);
+            $nilaiNorm = ($max != $min) ? ($row->rata_rata - $min) / ($max - $min) : 0;
 
             // Hitung jarak ke setiap centroid
             $minDist = null;
             $kategori = null;
 
             foreach ($centroids as $c) {
-                $dist = abs($nilaiNorm - $c->centroid); // ✅ fix di sini
+                $dist = abs($nilaiNorm - $c->centroid);
                 if (is_null($minDist) || $dist < $minDist) {
                     $minDist = $dist;
                     $kategori = $c->kategori;
                 }
             }
 
-            // Simpan ke rekomendasi_siswa (KMeans-Nilai)
+            // Simpan ke tabel rekomendasi_siswa
             DB::table('rekomendasi_siswa')->updateOrInsert(
                 ['nisn' => $nisn, 'metode' => 'KMeans-Nilai'],
                 [
@@ -53,6 +53,14 @@ class KMeansNilaiController extends Controller
                     'updated_at' => now(),
                 ]
             );
+        }
+
+        // Tandai bahwa proses nilai sudah dijalankan
+        session()->put('kmeans.nilai', true);
+
+        // Jika semua step (absen & pelanggaran) sudah dijalankan, tandai siap final
+        if (session('kmeans.absen') && session('kmeans.pelanggaran')) {
+            session()->put('kmeans.ready', true); // mengaktifkan tombol final
         }
 
         return back()->with('success', 'Clustering KMeans berdasarkan nilai berhasil dilakukan.');

@@ -9,7 +9,7 @@
         {{-- Header Halaman --}}
         <div class="header-section animate-fade-in-down">
             <h1 class="header-title">
-                <i class="fas fa-home header-icon animate-bounce-icon"></i> Selamat Datang,
+                <i class="fas fa-home header-icon animate-bounce-icon"></i> Salam Hangat, Bapak/Ibu Orang Tua:
                 <span class="user-name">{{ Auth::guard('parent')->user()->name ?? 'Orang Tua' }}</span>!
             </h1>
         </div>

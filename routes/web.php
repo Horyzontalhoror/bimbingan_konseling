@@ -166,7 +166,6 @@ Route::middleware('auth:web')->group(function () {
         Route::post('/', [AbsensiController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [AbsensiController::class, 'edit'])->name('edit');
         Route::put('/{id}', [AbsensiController::class, 'update'])->name('update');
-        Route::delete('/{id}', [AbsensiController::class, 'destroy'])->name('destroy');
     });
 });
 

@@ -15,13 +15,18 @@
             <div class="col-lg-6">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 bg-primary text-white">
-                        <h6 class="m-0 font-weight-bold"><i class="fas fa-project-diagram mr-2"></i>Proses K-Means Clustering
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-project-diagram mr-2"></i>Proses K-Means Clustering
                         </h6>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Kelompokkan siswa ke dalam 3 cluster (Baik, Cukup, Butuh Bimbingan)
-                            berdasarkan masing-masing kriteria.</p>
+                        <p class="text-muted">
+                            Kelompokkan siswa ke dalam 3 cluster (Baik, Cukup, Butuh Bimbingan)
+                            berdasarkan masing-masing kriteria.
+                        </p>
+
                         <div class="list-group">
+                            <!-- K-Means Nilai -->
                             <form action="{{ route('kmeans.nilai') }}" method="POST"
                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                 onsubmit="return confirm('Anda yakin ingin menjalankan clustering K-Means berdasarkan NILAI?')">
@@ -31,8 +36,12 @@
                                     <small>Mengelompokkan siswa berdasarkan rata-rata nilai akademik.</small>
                                 </div>
                                 <button type="submit" class="btn btn-info btn-sm" data-toggle="tooltip"
-                                    title="Proses Nilai"><i class="fas fa-chart-line"></i></button>
+                                    title="Proses Nilai" {{ session('kmeans.completed') ? 'disabled' : '' }}>
+                                    <i class="fas fa-chart-line"></i>
+                                </button>
                             </form>
+
+                            <!-- K-Means Absensi -->
                             <form action="{{ route('kmeans.absen') }}" method="POST"
                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                 onsubmit="return confirm('Anda yakin ingin menjalankan clustering K-Means berdasarkan ABSENSI?')">
@@ -42,8 +51,12 @@
                                     <small>Mengelompokkan siswa berdasarkan total ketidakhadiran.</small>
                                 </div>
                                 <button type="submit" class="btn btn-info btn-sm" data-toggle="tooltip"
-                                    title="Proses Absensi"><i class="fas fa-user-clock"></i></button>
+                                    title="Proses Absensi" {{ session('kmeans.completed') ? 'disabled' : '' }}>
+                                    <i class="fas fa-user-clock"></i>
+                                </button>
                             </form>
+
+                            <!-- K-Means Pelanggaran -->
                             <form action="{{ route('kmeans.pelanggaran') }}" method="POST"
                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                 onsubmit="return confirm('Anda yakin ingin menjalankan clustering K-Means berdasarkan PELANGGARAN?')">
@@ -53,14 +66,20 @@
                                     <small>Mengelompokkan siswa berdasarkan total poin pelanggaran.</small>
                                 </div>
                                 <button type="submit" class="btn btn-info btn-sm" data-toggle="tooltip"
-                                    title="Proses Pelanggaran"><i class="fas fa-gavel"></i></button>
+                                    title="Proses Pelanggaran" {{ session('kmeans.completed') ? 'disabled' : '' }}>
+                                    <i class="fas fa-gavel"></i>
+                                </button>
                             </form>
                         </div>
+
                         <hr>
+
+                        <!-- Finalisasi K-Means -->
                         <form action="{{ route('kmeans.final') }}" method="POST" class="text-center"
                             onsubmit="return confirm('Proses ini akan menentukan keputusan akhir berdasarkan hasil 3 clustering K-Means. Lanjutkan?')">
                             @csrf
-                            <button class="btn btn-warning btn-icon-split">
+                            <button class="btn btn-warning btn-icon-split"
+                                {{ !session('kmeans.ready') || session('kmeans.completed') ? 'disabled' : '' }}>
                                 <span class="icon text-white-50"><i class="fas fa-check-double"></i></span>
                                 <span class="text">Tentukan Keputusan Akhir K-Means</span>
                             </button>
@@ -95,12 +114,17 @@
         <!-- Panel Reset -->
         <div class="card shadow mb-4 border-left-danger">
             <div class="card-header py-3 bg-danger text-white">
-                <h6 class="m-0 font-weight-bold"><i class="fas fa-sync-alt mr-2"></i>Reset Data Algoritma</h6>
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-sync-alt mr-2"></i>Reset Data Algoritma
+                </h6>
             </div>
             <div class="card-body">
-                <p class="text-muted">Gunakan tombol ini untuk menghapus semua data hasil proses algoritma (kategori dan
-                    prediksi) dari database. Tindakan ini tidak dapat dibatalkan dan perlu dilakukan jika ada pembaruan data
-                    siswa yang signifikan.</p>
+                <p class="text-muted">
+                    Gunakan tombol ini untuk menghapus semua data hasil proses algoritma (kategori dan prediksi) dari
+                    database.
+                    Tindakan ini tidak dapat dibatalkan dan perlu dilakukan jika ada pembaruan data siswa yang signifikan.
+                </p>
+
                 <form action="{{ route('algoritma.reset.kategori') }}" method="POST"
                     onsubmit="return confirm('PERINGATAN! Anda akan menghapus semua hasil K-Means dan K-NN. Apakah Anda benar-benar yakin?')">
                     @csrf
@@ -109,6 +133,14 @@
                         <span class="text">Reset Semua Kategori & Prediksi</span>
                     </button>
                 </form>
+
+                @if (session('success') && session('success') === 'Berhasil direset.')
+                    <div class="alert alert-success mt-4 mb-0">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Semua data hasil proses algoritma berhasil direset. Anda sekarang bisa menjalankan ulang proses
+                        K-Means.
+                    </div>
+                @endif
             </div>
         </div>
 

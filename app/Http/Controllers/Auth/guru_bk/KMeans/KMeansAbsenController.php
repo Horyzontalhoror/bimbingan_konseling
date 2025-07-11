@@ -15,9 +15,6 @@ class KMeansAbsenController extends Controller
             ->groupBy('nisn')
             ->get();
 
-        // K1 → centroids[0]
-        // K2 → centroids[1]
-        // K3 → centroids[2]
         // Ambil centroid khusus untuk absen
         $centroids = DB::table('konfigurasi_kmeans')
             ->where('tipe', 'absen')
@@ -36,7 +33,8 @@ class KMeansAbsenController extends Controller
             $nisn = $row->nisn;
             $jumlah = $row->jumlah_absen;
 
-            $absenNorm = ($jumlah - $min) / max(($max - $min), 1);
+            // Normalisasi nilai
+            $absenNorm = ($max != $min) ? ($jumlah - $min) / ($max - $min) : 0;
 
             // Cari jarak terdekat ke centroid absen
             $minDist = null;
@@ -61,6 +59,14 @@ class KMeansAbsenController extends Controller
                     'updated_at' => now(),
                 ]
             );
+        }
+
+        // Tandai bahwa proses absen sudah dijalankan
+        session()->put('kmeans.absen', true);
+
+        // Cek apakah semua proses awal sudah selesai
+        if (session('kmeans.nilai') && session('kmeans.pelanggaran')) {
+            session()->put('kmeans.ready', true); // Aktifkan tombol final
         }
 
         return back()->with('success', 'Clustering KMeans berdasarkan absen berhasil dilakukan.');

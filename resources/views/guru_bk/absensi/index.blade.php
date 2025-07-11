@@ -64,7 +64,7 @@
 
             <!-- Area Filter -->
             {{-- <div class="collapse @if (request()->any()) show @endif" id="collapseFilterAbsensi"> --}}
-            <div class="collapse @if(request()->has('class') || request()->has('bulan')) show @endif" id="collapseFilterAbsensi">
+            <div class="collapse @if (request()->has('class') || request()->has('bulan')) show @endif" id="collapseFilterAbsensi">
                 <div class="card-body bg-light">
                     <form method="GET" action="{{ route('absensi.index') }}">
                         <div class="row align-items-end">
@@ -155,15 +155,6 @@
                                             class="btn btn-warning btn-circle btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('absensi.destroy', $absensi->id) }}" method="POST"
-                                            class="d-inline"
-                                            onsubmit="return confirm('Yakin ingin menghapus data absensi ini?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-circle btn-sm"
-                                                title="Hapus">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </form>
                                     </td>
                                 </tr>
                             @empty

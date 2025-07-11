@@ -48,7 +48,7 @@
                     </div>
                     <div class="card-body">
                         <input type="hidden" name="tanggal" value="{{ now()->toDateString() }}">
-                        <form action="{{ route('call-letter.generate') }}" method="POST" target="_blank">
+                        <form action="{{ route('call-letter.generate') }}" method="POST">
                             @csrf
 
                             <!-- Nama Siswa -->

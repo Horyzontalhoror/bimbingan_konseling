@@ -47,8 +47,6 @@ class KMeansController extends Controller
      */
     public function keputusanAkhir()
     {
-        $sumber = self::SUMBER_FINAL;
-
         $data = DB::table('students')
             ->leftJoin('rekomendasi_siswa as knilai', function ($q) {
                 $q->on('students.nisn', '=', 'knilai.nisn')->where('knilai.metode', 'KNN-Nilai');
@@ -103,7 +101,6 @@ class KMeansController extends Controller
 
             $keterangan = "Kategori akhir dari kombinasi (Nilai: $nilai, Absen: $absen, Pelanggaran: $pel)";
 
-            // Cek apakah data final sudah ada
             $exists = DB::table('rekomendasi_siswa')
                 ->where('nisn', $nisn)
                 ->where('metode', self::METODE_FINAL)
@@ -113,9 +110,9 @@ class KMeansController extends Controller
                 'nisn' => $nisn,
                 'metode' => self::METODE_FINAL,
                 'kategori' => $final,
-                'sumber' => $sumber,
+                'sumber' => self::SUMBER_FINAL,
                 'keterangan' => $keterangan,
-                'updated_at' => $timestamp
+                'updated_at' => $timestamp,
             ];
 
             if (!$exists) {
@@ -129,9 +126,12 @@ class KMeansController extends Controller
             DB::table('rekomendasi_siswa')->upsert(
                 $recordsToUpsert,
                 ['nisn', 'metode'],
-                ['kategori', 'sumber', 'keterangan', 'updated_at'] // ❗ created_at jangan di-update
+                ['kategori', 'sumber', 'keterangan', 'updated_at']
             );
         }
+
+        // 🔒 Tandai bahwa semua proses K-Means sudah dikunci
+        session()->put('kmeans.completed', true);
 
         return back()->with('success', 'Keputusan akhir berhasil ditentukan dengan data gabungan KMeans dan KNN.');
     }

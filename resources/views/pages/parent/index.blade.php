@@ -7,8 +7,7 @@
         {{-- Header Halaman --}}
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <h1 class="h3 mb-0 text-gray-800">
-                <i class="fas fa-home me-2 text-primary"></i> Selamat Datang,
-                <span class="text-dark">{{ Auth::guard('parent')->user()->name ?? 'Orang Tua' }}</span>!
+                <i class="fas fa-home me-2 text-primary"></i> Rangkuman Akademik Anak Anda!
             </h1>
             {{-- Tombol atau navigasi tambahan bisa ditambahkan di sini --}}
         </div>
@@ -106,60 +105,46 @@
 
         </div> {{-- End of row for summary cards --}}
 
-        <!-- Jadwal Konseling Card -->
+        {{-- Riwayat Surat Panggilan Card --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-calendar-check me-2"></i> Jadwal Konseling Terkini
+                    <i class="fas fa-clipboard-list me-2"></i> Riwayat Surat Panggilan
                 </h6>
             </div>
             <div class="card-body">
-                @php
-                    // Pastikan $student dan $student->jadwalKonseling ada sebelum mengaksesnya
-                    $jadwal = $student->jadwalKonseling ?? collect();
-                @endphp
-
-                @if ($jadwal->isEmpty())
-                    <div class="text-center py-4">
-                        <p class="text-info mb-0"><i class="fas fa-info-circle me-1"></i> Belum ada jadwal konseling yang
-                            terdaftar untuk anak Anda.</p>
-                    </div>
-                @else
+                @if ($surat && count($surat) > 0)
                     <div class="table-responsive">
-                        <table class="table table-striped table-bordered table-hover align-middle" id="jadwalKonselingTable"
+                        <table class="table table-striped table-bordered table-hover align-middle" id="callLettersTable"
                             width="100%" cellspacing="0">
                             <thead class="thead-dark text-center">
                                 <tr>
                                     <th scope="col" class="py-3">No</th>
                                     <th scope="col" class="py-3">Tanggal</th>
-                                    <th scope="col" class="py-3">Waktu</th>
-                                    <th scope="col" class="py-3">Tempat</th>
-                                    <th scope="col" class="py-3">Topik/Catatan</th>
-                                    <th scope="col" class="py-3">Status</th>
+                                    <th scope="col" class="py-3">Wali Kelas</th>
+                                    <th scope="col" class="py-3">Keperluan</th>
+                                    <th scope="col" class="py-3">Waktu Pertemuan</th>
+                                    <th scope="col" class="py-3">Tempat Pertemuan</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($jadwal as $index => $j)
+                                @foreach ($surat as $index => $s)
                                     <tr class="text-center">
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($j->date)->format('d M Y') }}</td>
-                                        <td>{{ $j->time ?? '-' }}</td>
-                                        <td>{{ $j->tempat_pertemuan ?? '-' }}</td>
-                                        <td class="text-left">{{ $j->note ?? '-' }}</td>
-                                        <td>
-                                            <span
-                                                class="badge badge-pill px-3 py-2
-                                            @if ($j->status === 'terjadwal') badge-info
-                                            @elseif ($j->status === 'selesai') badge-success
-                                            @elseif ($j->status === 'batal') badge-danger
-                                            @else badge-secondary @endif">
-                                                {{ ucfirst($j->status ?? '-') }}
-                                            </span>
-                                        </td>
+                                        <td>{{ \Carbon\Carbon::parse($s->tanggal)->format('d M Y') }}</td>
+                                        <td>{{ $s->wali_kelas ?? '-' }}</td>
+                                        <td class="text-left">{{ $s->keperluan ?? '-' }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($s->waktu_pertemuan)->format('H:i') ?? '-' }} WIB</td>
+                                        <td>{{ $s->tempat_pertemuan ?? '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                @else
+                    <div class="text-center py-4">
+                        <p class="text-info mb-0"><i class="fas fa-info-circle me-1"></i> Belum ada surat panggilan yang
+                            tersedia untuk anak Anda.</p>
                     </div>
                 @endif
             </div>

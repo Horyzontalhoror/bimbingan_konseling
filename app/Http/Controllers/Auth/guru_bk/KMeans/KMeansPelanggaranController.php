@@ -12,7 +12,7 @@ class KMeansPelanggaranController extends Controller
         // Ambil semua NISN siswa
         $semuaSiswa = DB::table('students')->pluck('nisn');
 
-        // Ambil jumlah pelanggaran per siswa (hanya yang punya pelanggaran)
+        // Ambil jumlah pelanggaran per siswa (yang punya pelanggaran saja)
         $pelanggaran = DB::table('violations')
             ->join('students', 'students.nisn', '=', 'violations.nisn')
             ->select('students.nisn', DB::raw('COUNT(*) as jumlah_pelanggaran'))
@@ -30,7 +30,7 @@ class KMeansPelanggaranController extends Controller
             return back()->with('error', 'Centroid pelanggaran belum lengkap.');
         }
 
-        // Normalisasi: ambil nilai minimum dan maksimum (termasuk yang tidak punya pelanggaran, dianggap 0)
+        // Ambil semua jumlah pelanggaran (default 0 jika tidak ada)
         $jumlahSemua = $semuaSiswa->map(function ($nisn) use ($pelanggaran) {
             return $pelanggaran[$nisn]->jumlah_pelanggaran ?? 0;
         });
@@ -42,7 +42,7 @@ class KMeansPelanggaranController extends Controller
             $jumlah = $pelanggaran[$nisn]->jumlah_pelanggaran ?? 0;
 
             // Normalisasi
-            $pelNorm = ($jumlah - $min) / max(($max - $min), 1);
+            $pelNorm = ($max != $min) ? ($jumlah - $min) / ($max - $min) : 0;
 
             // Hitung jarak ke setiap centroid
             $minDist = null;
@@ -67,6 +67,14 @@ class KMeansPelanggaranController extends Controller
                     'updated_at' => now(),
                 ]
             );
+        }
+
+        // Tandai bahwa proses pelanggaran sudah dijalankan
+        session()->put('kmeans.pelanggaran', true);
+
+        // Jika semua proses (nilai & absen) juga sudah dijalankan, aktifkan tombol final
+        if (session('kmeans.nilai') && session('kmeans.absen')) {
+            session()->put('kmeans.ready', true);
         }
 
         return back()->with('success', 'Clustering KMeans berdasarkan pelanggaran berhasil dilakukan untuk semua siswa.');

@@ -114,8 +114,22 @@ class NilaiController extends Controller
             return redirect()->route('nilai.index')->with('error', 'Data nilai tidak ditemukan.');
         }
 
-        DB::table('nilai')->where('id', $id)->delete();
+        DB::table('nilai')->where('id', $id)->update([
+            'bindo' => 0,
+            'bing' => 0,
+            'mat' => 0,
+            'ipa' => 0,
+            'ips' => 0,
+            'agama' => 0,
+            'ppkn' => 0,
+            'sosbud' => 0,
+            'tik' => 0,
+            'penjas' => 0,
+            'jumlah_nilai' => 0,
+            'rata_rata' => 0,
+            'updated_at' => now(),
+        ]);
 
-        return redirect()->route('nilai.index')->with('success', 'Data nilai berhasil dihapus.');
+        return redirect()->route('nilai.index')->with('success', 'Nilai siswa berhasil direset ke nol.');
     }
 }

@@ -53,12 +53,12 @@
                             <thead class="thead-dark text-center">
                                 <tr>
                                     <th scope="col" class="py-3">No</th>
-                                    <th scope="col" class="py-3">Tanggal Surat</th>
+                                    <th scope="col" class="py-3">Tanggal</th>
                                     <th scope="col" class="py-3">Wali Kelas</th>
                                     <th scope="col" class="py-3">Keperluan</th>
                                     <th scope="col" class="py-3">Waktu Pertemuan</th>
                                     <th scope="col" class="py-3">Tempat Pertemuan</th>
-                                    <th scope="col" class="py-3">Aksi</th>
+                                    <th scope="col" class="py-3">File</th>
                                 </tr>
                             </thead>
                             <tbody>
