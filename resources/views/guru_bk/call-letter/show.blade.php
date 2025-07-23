@@ -127,7 +127,7 @@
 
                     <!-- NOMOR & TANGGAL SURAT -->
                     <div class="text-right mb-4">
-                        Pamakayo, {{ \Carbon\Carbon::parse($surat->tanggal)->isoFormat('D MMMM Y') }}
+                        Pamakayo, {{ \Carbon\Carbon::parse($surat->tanggal_pertemuan)->isoFormat('D MMMM Y') }}
                     </div>
 
                     <div class="row">
@@ -183,7 +183,7 @@
                                     \Carbon\Carbon::setLocale('id');
                                 @endphp
                                 <td style="width: 25%;">Hari, Tanggal</td>
-                                <td>: {{ \Carbon\Carbon::parse($surat->tanggal_pertemuan)->isoFormat('dddd, D MMMM Y') }}
+                                <td>: {{ \Carbon\Carbon::parse($surat->tanggal)->isoFormat('dddd, D MMMM Y') }}
                                 </td>
                             </tr>
                             <tr>
@@ -226,7 +226,7 @@
                 `*Nama:* {{ urlencode($surat->student->name ?? 'N/A') }}%0A` +
                 `*Kelas:* {{ urlencode($surat->student->class ?? 'N/A') }}%0A%0A` +
                 `Untuk dapat hadir di sekolah pada:%0A` +
-                `*Hari/Tanggal:* {{ urlencode(\Carbon\Carbon::parse($surat->tanggal_pertemuan)->isoFormat('dddd, D MMMM Y')) }}%0A` +
+                `*Hari/Tanggal:* {{ urlencode(\Carbon\Carbon::parse($surat->tanggal)->isoFormat('dddd, D MMMM Y')) }}%0A` +
                 `*Waktu:* {{ urlencode(\Carbon\Carbon::parse($surat->waktu_pertemuan)->format('H:i')) }} WIB%0A` +
                 `*Tempat:* {{ urlencode($surat->tempat_pertemuan) }}%0A%0A` +
                 `Keperluan: *{{ urlencode($surat->keperluan) }}*%0A%0A` +
