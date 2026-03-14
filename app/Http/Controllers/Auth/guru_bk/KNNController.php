@@ -10,7 +10,7 @@ class KNNController extends Controller
 {
     public function predict(Request $request)
     {
-        $k = 3;
+        $k = 3; // Jumlah tetangga terdekat yang akan dipertimbangkan
 
         // Ambil siswa yang perlu diprediksi ulang
         $siswaBaru = DB::table('students')->where('is_predicted', false)->pluck('nisn');
